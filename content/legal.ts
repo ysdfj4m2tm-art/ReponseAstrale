@@ -2,7 +2,7 @@ export const legalInfo = {
   site: "RéponseAstrale",
   domain: "reponseastrale.fr",
   publisher: "OFID",
-  publicationDirector: "Vincent Vallet",
+  publicationDirector: "V. Vallet",
   location: "Métropole lilloise, Hauts-de-France",
   email: "contact@reponseastrale.fr",
   host: "Netlify",

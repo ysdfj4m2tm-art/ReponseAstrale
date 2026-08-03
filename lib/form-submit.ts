@@ -11,3 +11,13 @@ export function serializeForNetlify(data: AnalysisFormData, technical: { dossier
   for (const [key, value] of Object.entries(data)) payload[key] = typeof value === "boolean" ? String(value) : value || "";
   return new URLSearchParams(payload).toString();
 }
+
+export function persistConfirmation(summary: unknown, storage?: Pick<Storage, "setItem">) {
+  try {
+    const target = storage ?? (typeof window !== "undefined" ? window.sessionStorage : undefined);
+    target?.setItem("reponseastrale-confirmation", JSON.stringify(summary));
+  } catch {
+    // Some privacy-focused browsers disable sessionStorage. The submission must
+    // still complete and redirect to the confirmation page in that case.
+  }
+}

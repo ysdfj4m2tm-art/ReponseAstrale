@@ -9,7 +9,7 @@ import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/analytics";
 import { generateDossierId } from "@/lib/dossier-id";
 import { AnalysisFormData, defaultFormValues, formSchema } from "@/lib/form-schema";
-import { serializeForNetlify } from "@/lib/form-submit";
+import { persistConfirmation, serializeForNetlify } from "@/lib/form-submit";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 const stepFields: (keyof AnalysisFormData)[][] = [
@@ -54,8 +54,8 @@ export function AstroForm() {
       const body = serializeForNetlify(data,{dossierId,pageUrl:window.location.href,referrer:document.referrer});
       const response = await fetch("/netlify-form.html",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
       if(!response.ok) throw new Error("submission failed");
-      sessionStorage.setItem("reponseastrale-confirmation",JSON.stringify(summary));
-      trackEvent("form_submit_success"); window.location.assign("/merci");
+      persistConfirmation(summary);
+      try { trackEvent("form_submit_success"); } finally { window.location.assign("/merci"); }
     } catch { setStatus("error"); trackEvent("form_submit_error"); }
   }
 

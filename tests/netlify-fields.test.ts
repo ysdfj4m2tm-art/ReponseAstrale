@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe,expect,it } from "vitest";
-import { NETLIFY_FIELDS, serializeForNetlify } from "@/lib/form-submit";
+import { NETLIFY_FIELDS, persistConfirmation, serializeForNetlify } from "@/lib/form-submit";
 import type { AnalysisFormData } from "@/lib/form-schema";
 
 describe("Netlify Forms",()=>{
@@ -19,5 +19,9 @@ describe("Netlify Forms",()=>{
     expect(parsed.get("form-name")).toBe("analyse-gratuite");
     expect(parsed.get("birthTimeUnknown")).toBe("true");
     expect(parsed.get("formVersion")).toBe("1");
+  });
+  it("ne bloque pas la confirmation lorsque le stockage de session est indisponible",()=>{
+    const blockedStorage={setItem(){throw new Error("storage blocked")}};
+    expect(()=>persistConfirmation({dossierId:"RA-TEST"},blockedStorage)).not.toThrow();
   });
 });
