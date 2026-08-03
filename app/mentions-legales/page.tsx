@@ -1,5 +1,61 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
 import { legalInfo } from "@/content/legal";
-export const metadata:Metadata={title:"Mentions légales",description:"Mentions légales du site RéponseAstrale édité par OFID.",alternates:{canonical:"/mentions-legales"}};
-export default function Page(){const known=[["Site",legalInfo.site],["Domaine",legalInfo.domain],["Éditeur",legalInfo.publisher],["Responsable de publication",legalInfo.publicationDirector],["Localisation",legalInfo.location],["Contact",legalInfo.email],["Hébergeur",legalInfo.host],["Registrar",legalInfo.registrar],["Forme juridique",legalInfo.legalForm],["Siège social",legalInfo.registeredAddress],["SIREN / SIRET",legalInfo.registrationNumber],["Capital social",legalInfo.shareCapital],["TVA",legalInfo.vatNumber],["Téléphone",legalInfo.phone],["Adresse de l’hébergeur",legalInfo.hostAddress]].filter(([,v])=>v);return <LegalPage eyebrow="Informations légales" title="Mentions légales" intro="Informations relatives à l’édition, à l’hébergement et à l’utilisation du site RéponseAstrale."><div className="legal-warning"><strong>À compléter avant exploitation commerciale définitive</strong><p>Ces informations doivent être complétées et vérifiées par l’éditeur avant l’exploitation commerciale définitive du site.</p></div><section><h2>Édition et hébergement</h2><dl>{known.map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></section><section><h2>Propriété intellectuelle</h2><p>Les textes, interfaces, illustrations, éléments de marque et méthodes présentés sur ce site sont protégés. Toute reproduction substantielle, extraction massive ou utilisation commerciale sans autorisation préalable est interdite.</p></section><section><h2>Responsabilité et disponibilité</h2><p>RéponseAstrale s’efforce de proposer des informations exactes et un service accessible. Une interruption, une erreur ou un délai peuvent néanmoins survenir. Les interprétations astrologiques sont symboliques et ne remplacent aucun avis professionnel qualifié.</p></section><section><h2>Liens externes et modification du site</h2><p>Les liens externes sont proposés à titre pratique. RéponseAstrale ne contrôle pas leurs contenus. Le site, ses fonctionnalités et les présentes mentions peuvent évoluer afin de refléter le service et le droit applicable.</p></section></LegalPage>}
+
+export const metadata: Metadata = {
+  title: "Mentions légales",
+  description: "Mentions légales du site RéponseAstrale édité par OFID.",
+  alternates: { canonical: "/mentions-legales" },
+};
+
+export default function Page() {
+  const known = [
+    ["Site", legalInfo.site],
+    ["Domaine", legalInfo.domain],
+    ["Éditeur", legalInfo.publisher],
+    ["Responsable de publication", legalInfo.publicationDirector],
+    ["Localisation", legalInfo.location],
+    ["Contact", legalInfo.email],
+    ["Hébergeur", legalInfo.host],
+    ["Registrar", legalInfo.registrar],
+    ["Forme juridique", legalInfo.legalForm],
+    ["Siège social", legalInfo.registeredAddress],
+    ["SIREN / SIRET", legalInfo.registrationNumber],
+    ["Capital social", legalInfo.shareCapital],
+    ["TVA", legalInfo.vatNumber],
+    ["Téléphone", legalInfo.phone],
+    ["Adresse de l’hébergeur", legalInfo.hostAddress],
+  ].filter(([, value]) => value);
+
+  return (
+    <LegalPage
+      eyebrow="Informations légales"
+      title="Mentions légales"
+      intro="Informations relatives à l’édition, à l’hébergement et à l’utilisation du site RéponseAstrale."
+    >
+      <section>
+        <h2>Édition et hébergement</h2>
+        <dl>
+          {known.map(([key, value]) => (
+            <div key={key}>
+              <dt>{key}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section>
+        <h2>Propriété intellectuelle</h2>
+        <p>Les textes, interfaces, illustrations, éléments de marque et méthodes présentés sur ce site sont protégés. Toute reproduction substantielle, extraction massive ou utilisation commerciale sans autorisation préalable est interdite.</p>
+      </section>
+      <section>
+        <h2>Responsabilité et disponibilité</h2>
+        <p>RéponseAstrale s’efforce de proposer des informations exactes et un service accessible. Une interruption, une erreur ou un délai peuvent néanmoins survenir. Les interprétations astrologiques sont symboliques et ne remplacent aucun avis professionnel qualifié.</p>
+      </section>
+      <section>
+        <h2>Liens externes et modification du site</h2>
+        <p>Les liens externes sont proposés à titre pratique. RéponseAstrale ne contrôle pas leurs contenus. Le site, ses fonctionnalités et les présentes mentions peuvent évoluer afin de refléter le service et le droit applicable.</p>
+      </section>
+    </LegalPage>
+  );
+}
