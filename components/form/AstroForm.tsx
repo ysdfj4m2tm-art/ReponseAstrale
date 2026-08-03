@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, ArrowLeft, ArrowRight, Check, LoaderCircle, LockKeyhole } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { questionCategories } from "@/content/questions";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/analytics";
@@ -15,6 +15,12 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 const stepFields: (keyof AnalysisFormData)[][] = [
   ["category"], ["question", "partnerBirthDate", "partnerBirthPlace", "relationshipType", "thirdPartyConsent", "eventDate", "eventType", "eventDescription", "periodStart", "periodContext"], ["birthDate", "birthTime", "birthTimeUnknown", "birthPlace"], ["firstName", "email", "designation", "ageConfirmed"], ["consentData", "consentLimits"],
 ];
+const stepLabels = ["Sujet", "Question", "Naissance", "Coordonnées", "Vérification"];
+
+export function findErrorStep(fieldNames: string[]) {
+  const index = stepFields.findIndex((fields)=>fields.some((field)=>fieldNames.includes(String(field))));
+  return index >= 0 ? index : 4;
+}
 
 function ErrorText({ message }: { message?: string }) { return message ? <p className="field-error" role="alert"><AlertCircle size={15}/>{message}</p> : null; }
 function FieldLabel({ htmlFor, children, optional }: { htmlFor: string; children: React.ReactNode; optional?: boolean }) { return <label htmlFor={htmlFor}>{children}{optional ? <small> facultatif</small> : <span aria-hidden="true"> *</span>}</label>; }
@@ -22,7 +28,9 @@ function FieldLabel({ htmlFor, children, optional }: { htmlFor: string; children
 export function AstroForm() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<"idle"|"sending"|"error">("idle");
+  const [validationNotice, setValidationNotice] = useState("");
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const noticeRef = useRef<HTMLDivElement>(null);
   const methods = useForm<AnalysisFormData>({ resolver: zodResolver(formSchema), defaultValues: defaultFormValues, mode: "onTouched" });
   const { register, watch, setValue, trigger, handleSubmit, formState: { errors } } = methods;
   // React Hook Form intentionally exposes an imperative watch API.
@@ -31,6 +39,7 @@ export function AstroForm() {
   const selected = questionCategories.find((item)=>item.id===category);
 
   useEffect(()=>{ if(step>0) headingRef.current?.focus(); trackEvent("form_step_view",{step:step+1}); },[step]);
+  useEffect(()=>{ if(validationNotice) noticeRef.current?.focus(); },[validationNotice]);
   useEffect(()=>{ if(birthUnknown) setValue("birthTime",""); },[birthUnknown,setValue]);
 
   async function next(){
@@ -41,13 +50,23 @@ export function AstroForm() {
       return true;
     });
     const valid = await trigger(relevant, { shouldFocus: true });
-    if(valid){ trackEvent("form_step_complete",{step:step+1}); setStep((value)=>Math.min(value+1,4)); }
-    else trackEvent("form_validation_error",{step:step+1});
+    if(valid){ setValidationNotice(""); trackEvent("form_step_complete",{step:step+1}); setStep((value)=>Math.min(value+1,4)); }
+    else { setValidationNotice("Corrigez les champs indiqués avant de continuer."); trackEvent("form_validation_error",{step:step+1}); }
+  }
+
+  function invalidSubmit(invalidFields: FieldErrors<AnalysisFormData>) {
+    const invalidStep = findErrorStep(Object.keys(invalidFields));
+    setStatus("idle");
+    setValidationNotice(invalidStep === 4
+      ? "Vérifiez les deux consentements obligatoires indiqués ci-dessous."
+      : `Une information doit être corrigée à l’étape « ${stepLabels[invalidStep]} ». Nous vous y avons ramené.`);
+    setStep(invalidStep);
+    trackEvent("form_validation_error",{step:invalidStep+1});
   }
 
   async function submit(data: AnalysisFormData){
     if (status === "sending") return;
-    setStatus("sending"); trackEvent("form_submit");
+    setValidationNotice(""); setStatus("sending"); trackEvent("form_submit");
     const dossierId = generateDossierId();
     const summary = { dossierId, category: selected?.title || data.category, question: data.question, delay: siteConfig.processingDelay };
     try {
@@ -61,11 +80,12 @@ export function AstroForm() {
 
   if(!siteConfig.formEnabled) return <div className="form-paused"><span className="eyebrow">Qualité des analyses</span><h3>Les nouvelles demandes sont temporairement suspendues</h3><p>Nous finalisons actuellement les analyses déjà reçues afin de préserver leur qualité. Le formulaire rouvrira prochainement.</p></div>;
 
-  return <form name="analyse-gratuite" method="POST" data-netlify="true" data-netlify-honeypot="company-website" className="astro-form" onSubmit={handleSubmit(submit)} noValidate>
+  return <form name="analyse-gratuite" method="POST" data-netlify="true" data-netlify-honeypot="company-website" className="astro-form" onSubmit={handleSubmit(submit,invalidSubmit)} noValidate>
     <input type="hidden" name="form-name" value="analyse-gratuite"/>
     <div className="honeypot" aria-hidden="true"><label htmlFor="company-website">Ne pas remplir</label><input id="company-website" tabIndex={-1} autoComplete="off" {...register("company-website")}/></div>
-    <ol className="form-progress" aria-label="Progression du formulaire">{["Sujet","Question","Naissance","Coordonnées","Vérification"].map((label,index)=><li key={label} aria-current={index===step?"step":undefined} className={index<=step?"active":""}><span>{index<step?<Check size={15}/>:index+1}</span><em>{label}</em></li>)}</ol>
+    <ol className="form-progress" aria-label="Progression du formulaire">{stepLabels.map((label,index)=><li key={label} aria-current={index===step?"step":undefined} className={index<=step?"active":""}><span>{index<step?<Check size={15}/>:index+1}</span><em>{label}</em></li>)}</ol>
     {siteConfig.highDemand && <div className="high-demand"><AlertCircle/><p>{siteConfig.highDemandMessage}</p></div>}
+    {validationNotice && <div className="submit-error" role="alert" tabIndex={-1} ref={noticeRef}><AlertCircle/><p>{validationNotice}</p></div>}
     <div className="form-stage" aria-live="polite">
       {step===0 && <section><span className="eyebrow">Étape 1 sur 5</span><h3 tabIndex={-1} ref={headingRef}>Quel sujet souhaitez-vous explorer ?</h3><p className="stage-lead">Choisissez le domaine le plus proche de votre question.</p><div className="form-category-grid">{questionCategories.map((item)=><label key={item.id} className={`select-card ${category===item.id?"selected":""}`} style={{"--accent":item.accent} as React.CSSProperties}><input type="radio" value={item.id} {...register("category")} onChange={(e)=>{register("category").onChange(e);trackEvent("category_select",{category:item.id});trackEvent("form_start");}}/><CategoryIcon name={item.icon}/><span>{item.shortTitle}</span>{category===item.id&&<Check className="select-check" size={17}/>}</label>)}</div><ErrorText message={errors.category?.message}/></section>}
       {step===1 && <section><span className="eyebrow">Étape 2 sur 5 · {selected?.title}</span><h3 tabIndex={-1} ref={headingRef}>Posez votre première question gratuite</h3>{selected && <div className="question-suggestions" aria-label="Exemples de questions">{selected.examples.map((example)=><button type="button" key={example} onClick={()=>setValue("question",example,{shouldValidate:true})}>{example}</button>)}</div>}<div className="field"><FieldLabel htmlFor="question">Votre question</FieldLabel><textarea id="question" rows={7} maxLength={2000} aria-describedby="question-help question-count" {...register("question")}/><div className="field-meta"><span id="question-help">Évitez toute donnée médicale, bancaire, judiciaire ou inutilement personnelle.</span><span id="question-count">{question.length}/2 000</span></div><ErrorText message={errors.question?.message}/></div>{selected?.warning&&<p className="gentle-warning">{selected.warning}</p>}{category==="compatibilite"&&<CompatibilityFields register={register} watch={watch} setValue={setValue} errors={errors}/>} {category==="date-importante"&&<DateFields register={register} watch={watch} setValue={setValue} errors={errors}/>} {["periode-passee","periode-future"].includes(category)&&<PeriodFields register={register} errors={errors}/>}</section>}
