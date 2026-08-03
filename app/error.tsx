@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({reset}:{reset:()=>void}){return <html lang="fr"><body><main className="thank-you"><div className="shell narrow thank-card"><span className="eyebrow">Un imprévu est survenu</span><h1>La page n’a pas pu être affichée</h1><p>Vous pouvez réessayer. Si le problème persiste, revenez à l’accueil.</p><button className="button" onClick={()=>reset()}>Réessayer</button></div></main></body></html>}

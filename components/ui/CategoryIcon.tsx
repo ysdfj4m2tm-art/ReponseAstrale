@@ -1,0 +1,4 @@
+import { Activity, BriefcaseBusiness, CalendarDays, Coins, Flower2, GraduationCap, Heart, HeartHandshake, History, House, MessageCircleQuestion, Orbit, Rocket, Sparkles, Telescope, UsersRound } from "lucide-react";
+
+const icons = { heart: Heart, "heart-handshake": HeartHandshake, sparkles: Sparkles, orbit: Orbit, briefcase: BriefcaseBusiness, coins: Coins, users: UsersRound, house: House, calendar: CalendarDays, flower: Flower2, activity: Activity, graduation: GraduationCap, rocket: Rocket, history: History, telescope: Telescope, "message-circle-question": MessageCircleQuestion };
+export function CategoryIcon({ name, size = 28 }: { name: string; size?: number }) { const Icon = icons[name as keyof typeof icons] || Sparkles; return <Icon size={size} strokeWidth={1.65} aria-hidden="true" />; }

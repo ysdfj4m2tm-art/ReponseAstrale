@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function manifest():MetadataRoute.Manifest{return{name:"RéponseAstrale",short_name:"RéponseAstrale",description:"Analyse astrologique personnalisée",start_url:"/",display:"standalone",background_color:"#f3effb",theme_color:"#5825ad",lang:"fr",icons:[{src:"/brand/icon-512.png",sizes:"512x512",type:"image/png"},{src:"/brand/apple-touch-icon.png",sizes:"180x180",type:"image/png"}]}}
