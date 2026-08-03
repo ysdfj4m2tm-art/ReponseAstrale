@@ -52,7 +52,7 @@ export function AstroForm() {
     const summary = { dossierId, category: selected?.title || data.category, question: data.question, delay: siteConfig.processingDelay };
     try {
       const body = serializeForNetlify(data,{dossierId,pageUrl:window.location.href,referrer:document.referrer});
-      const response = await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+      const response = await fetch("/netlify-form.html",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
       if(!response.ok) throw new Error("submission failed");
       sessionStorage.setItem("reponseastrale-confirmation",JSON.stringify(summary));
       trackEvent("form_submit_success"); window.location.assign("/merci");
