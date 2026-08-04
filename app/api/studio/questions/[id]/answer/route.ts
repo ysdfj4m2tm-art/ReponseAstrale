@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { getSqlClient } from "@/db/client";
+import { authorizeStudio } from "@/lib/studio-auth";
+export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){const denied=authorizeStudio(request);if(denied)return denied;const{id}=await params;const body=await request.json() as {answerText?:string;pdfUrl?:string;promptVersion?:string;model?:string;generationCostCents?:number};if(!body.answerText||!body.promptVersion||!body.model||body.answerText.length>100000)return NextResponse.json({error:"INVALID_REQUEST"},{status:400});const sql=getSqlClient();try{const rows=await sql`SELECT publish_question_answer(${id}::uuid,${body.answerText},${body.pdfUrl??null},${body.promptVersion},${body.model},${body.generationCostCents??null})`;return NextResponse.json({published:true,answerId:Object.values(rows[0])[0]});}catch{return NextResponse.json({error:"NOT_PROCESSING"},{status:409});}}

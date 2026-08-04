@@ -1,11 +1,11 @@
 # RéponseAstrale
 
 > [!CAUTION]
-> Avant toute exploitation commerciale, compléter et faire vérifier dans `content/legal.ts` la forme juridique, l’adresse du siège, le SIREN/SIRET, le capital éventuel, le numéro de TVA éventuel, le téléphone éventuel, les informations complètes de l’hébergeur et la liste des prestataires technologiques. Les commentaires `TODO LEGAL` repèrent ces éléments.
+> Avant toute exploitation commerciale, solder `docs/LEGAL_CHECKLIST.md`. Le code bloque l’environnement Stripe live tant que les coordonnées juridiques obligatoires restent incomplètes.
 
 ## Présentation
 
-RéponseAstrale est un site français d’analyse astrologique personnalisée. Il présente une première analyse offerte, un formulaire multiétape, des pages éditoriales SEO, les pages légales et un exemple anonymisé. La direction artistique associe violet profond, lavande, or et motifs astraux.
+RéponseAstrale est le site public français d’analyse astrologique personnalisée. Il propose une première analyse offerte et un parcours payant fondé sur les « Soleils » : 1 Soleil permet de poser 1 question personnelle.
 
 Le formulaire est relié à Netlify Forms par une soumission AJAX encodée en `application/x-www-form-urlencoded`. Le blueprint statique `public/netlify-form.html` permet à Netlify de détecter tous les champs au déploiement.
 
@@ -17,6 +17,11 @@ Le formulaire est relié à Netlify Forms par une soumission AJAX encodée en `a
 - Tailwind CSS 4 et PostCSS ;
 - React Hook Form, Zod et `@hookform/resolvers` ;
 - Motion et Lucide React ;
+- Neon PostgreSQL 18 et Neon Auth ;
+- Drizzle ORM et migrations SQL contrôlées ;
+- Stripe Checkout et webhook signé ;
+- Resend prévu pour les e-mails transactionnels applicatifs ;
+- Google Gemini API prévu pour l’interprétation et la rédaction, séparément du moteur astrologique déterministe ;
 - ESLint, Vitest, Testing Library et jsdom pour les contrôles.
 
 La liste faisant autorité reste celle de `package.json`. Le dépôt correspond désormais à une application Next.js standard destinée à Netlify.
@@ -31,6 +36,7 @@ npm run dev
 npm run lint
 npm run typecheck
 npm test
+npm run test:db
 npm run build
 ```
 
@@ -47,7 +53,9 @@ npm start
 app/                     routes App Router, métadonnées, sitemap et robots
 components/              navigation, footer, formulaire, modale et composants visuels
 content/                 contenus éditoriaux, catégories, FAQ, témoignages et données légales
-lib/                     schéma, sérialisation Netlify, identifiants et analytics neutre
+db/                      schéma Drizzle et migrations PostgreSQL
+lib/                     services serveur, sécurité, commerce et analytics neutre
+docs/                    procédures Neon, Stripe, Netlify, Studio et juridique
 public/brand/            logo, favicons et icônes de marque
 public/netlify-form.html blueprint statique de Netlify Forms
 tests/                   tests de validation, composants, contenus et parité des champs
@@ -116,8 +124,19 @@ Copier `.env.example` vers `.env.local` en local et déclarer les mêmes variabl
 | `NEXT_PUBLIC_ANALYTICS_PROVIDER` | emplacement réservé, valeur actuelle `none` |
 | `GEOCODING_PROVIDER` | emplacement réservé, valeur actuelle `none` |
 | `GEOCODING_API_KEY` | clé privée éventuelle d’un futur géocodage |
+| `DATABASE_URL` | connexion Neon pooled de l’application |
+| `DATABASE_URL_UNPOOLED` | connexion directe réservée aux migrations |
+| `NEON_AUTH_BASE_URL` | endpoint Neon Auth |
+| `NEON_AUTH_COOKIE_SECRET` | chiffrement des cookies Auth |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | API et signature Stripe côté serveur |
+| `STRIPE_PRICE_ONE_SUN` / `STRIPE_PRICE_THREE_SUNS` | catalogue Stripe test/live |
+| `STUDIO_API_TOKEN` | authentification serveur de la passerelle Studio |
+| `EMAIL_PROVIDER` / `EMAIL_FROM` | fournisseur Resend et expéditeur transactionnel |
+| `RESEND_API_KEY` | clé Resend serveur pour les e-mails de l’application |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | accès serveur au service Gemini retenu |
+| `SENSITIVE_CONTENT_GUARD` | contrôle prudent avant stockage/envoi, valeur recommandée `block` |
 
-Ne jamais placer de secret dans une variable préfixée `NEXT_PUBLIC_`.
+Ne jamais placer de secret dans une variable préfixée `NEXT_PUBLIC_`. L’envoi Resend n’est pas considéré opérationnel avant vérification du domaine, autorisation de l’expéditeur, configuration de la clé et réception d’un e-mail réel. Les codes Neon Auth utilisent la configuration e-mail propre à Neon Auth ; en production, prévoir séparément le SMTP Resend dans Neon et l’API Resend dans l’application.
 
 ## Suspension du formulaire
 
@@ -148,7 +167,7 @@ Conserver `NEXT_PUBLIC_FORM_ENABLED=true`, passer `NEXT_PUBLIC_HIGH_DEMAND=true`
 
 ## Mentions légales
 
-Les champs juridiques incomplets restent centralisés dans `content/legal.ts`. Avant la mise en ligne commerciale, renseigner et valider la forme juridique, le siège, le SIREN/SIRET, le capital éventuel, la TVA éventuelle, le téléphone éventuel, l’adresse complète de l’hébergeur et les prestataires technologiques. Le bandeau n’est pas affiché aux visiteurs ; cet avertissement de maintenance reste volontairement visible dans le README.
+Les champs juridiques incomplets restent centralisés dans `content/legal.ts`. Avant la mise en ligne commerciale, renseigner et valider la forme juridique, le siège, le SIREN/SIRET, le capital, la TVA, le téléphone, les coordonnées de l’hébergeur, le médiateur et les prestataires technologiques. L’adresse du siège reste volontairement absente des pages publiques tant qu’elle n’est pas stabilisée ; cette absence ne vaut pas résolution juridique.
 
 ## Netlify Web Analytics
 
@@ -161,6 +180,6 @@ Netlify Web Analytics peut être activé depuis **Analytics** dans le tableau de
 3. Choisir le mode **Mobile**.
 4. Vérifier **Performance**, **Accessibilité**, **Bonnes pratiques** et **SEO**, lancer l’analyse et corriger les régressions avant publication.
 
-## Évolutions futures
+## Parcours commercial
 
-Les fonctionnalités suivantes ne sont pas développées : paiement, comptes, historique, génération PDF, automatisations, newsletter, réseaux sociaux et CGV. Elles nécessiteront une conception spécifique avant toute activation.
+Le code fournit le catalogue 1/3 Soleils, Stripe Checkout, un webhook idempotent, les droits transactionnels, Neon Auth par code e-mail, l’espace client et la passerelle Studio. Le PDF reste produit par le Studio. Les ressources Stripe, l’expéditeur e-mail et les variables Netlify doivent être configurés selon `docs/` avant un test bout en bout, puis la checklist juridique doit être soldée avant le live.

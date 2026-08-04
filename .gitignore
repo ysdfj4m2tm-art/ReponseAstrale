@@ -33,6 +33,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local Neon project/branch context (contains no credentials, but is machine-specific)
+.neon
+
 # vercel
 .vercel
 
