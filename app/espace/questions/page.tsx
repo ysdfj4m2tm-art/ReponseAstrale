@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SunTokenIcon } from "@/components/brand/SunTokenIcon";
 import { AstralQuestionForm, type ExistingChartSummary } from "@/components/form/AstroForm";
 import { questionCategories } from "@/content/questions";
+import { formatSunCount } from "@/content/commerce";
 import { getSqlClient } from "@/db/client";
 import { requireAuthenticatedUser } from "@/lib/auth/server";
 import { ensureProfile } from "@/lib/profiles";
@@ -38,7 +39,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
   } : undefined;
 
   return <div className="account-panel questions-panel">
-    <div className="questions-heading"><div><span className="eyebrow">Questions personnelles</span><h2>Mes questions</h2><p>1 Soleil correspond à une question personnalisée.</p></div><div className="sun-balance"><SunTokenIcon/><strong>{suns}</strong><span>{suns === 1 ? "Soleil disponible" : "Soleils disponibles"}</span></div></div>
+    <div className="questions-heading"><div><span className="eyebrow">Questions personnelles</span><h2>Mes questions</h2><p>1 Soleil correspond à une question personnalisée.</p></div><div className="sun-balance"><SunTokenIcon/><strong>{formatSunCount(suns)}</strong><span>disponible{suns > 1 ? "s" : ""}</span></div></div>
     {wasSubmitted&&<div className="submission-confirmation" role="status"><strong>Votre question a bien été transmise</strong><p>{chart?.firstName ? "Votre thème est en préparation. " : ""}Votre analyse personnalisée sera disponible sous 48 heures.</p><span>Analyse en préparation</span></div>}
     {suns > 0 ? <div className="account-form-frame"><AstralQuestionForm mode={chart ? "paid-existing-chart" : "paid-new-chart"} accountEmail={profile.email_normalized} chart={chart}/></div> : <div className="no-sun-state"><span className="eyebrow">Aucun Soleil disponible</span><h3>Choisissez un nouveau Soleil pour poser une question</h3><p>Chaque Soleil permet d’envoyer une question personnelle. La réponse est préparée sous 48 heures à partir de votre thème.</p><Link href="/exploration" className="button">Acheter des Soleils</Link></div>}
     <div className="record-list" aria-label="Historique des questions">{questions.map((question)=><article key={String(question.id)}><span className="record-status">{statusLabels[String(question.status)] || String(question.status)}</span><strong>{categoryLabels.get(String(question.category)) || String(question.category)}</strong><p>{String(question.question_text)}</p><small>{new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(new Date(question.submitted_at as string))}</small></article>)}</div>

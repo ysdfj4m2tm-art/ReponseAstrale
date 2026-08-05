@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { questionCategories } from "@/content/questions";
+import { formatSunCount } from "@/content/commerce";
 import { siteConfig } from "@/content/site";
 import { trackEvent } from "@/lib/analytics";
 import { generateDossierId } from "@/lib/dossier-id";
@@ -125,7 +126,7 @@ function FullAstralQuestionForm({ mode, accountEmail }: { mode: "free" | "paid-n
 
   if(!paid && !siteConfig.formEnabled) return <div className="form-paused"><span className="eyebrow">Qualité des analyses</span><h3>Les nouvelles demandes sont temporairement suspendues</h3><p>Nous finalisons actuellement les analyses déjà reçues afin de préserver leur qualité. Le formulaire rouvrira prochainement.</p></div>;
 
-  if (success) return <div className="astro-form paid-success" role="status"><Check/><span className="eyebrow">Demande confirmée</span><h3>Votre question a bien été transmise</h3><p>Votre thème va être préparé à partir de vos informations de naissance. Votre analyse personnalisée sera disponible sous 48 heures.</p><strong>Analyse en préparation</strong><p>{success.remaining} Soleil disponible</p></div>;
+  if (success) return <div className="astro-form paid-success" role="status"><Check/><span className="eyebrow">Demande confirmée</span><h3>Votre question a bien été transmise</h3><p>Votre thème va être préparé à partir de vos informations de naissance. Votre analyse personnalisée sera disponible sous 48 heures.</p><strong>Analyse en préparation</strong><p>{formatSunCount(success.remaining)} disponible{success.remaining > 1 ? "s" : ""}</p></div>;
 
   return <form name={paid ? "question-payante" : "analyse-gratuite"} method={paid ? undefined : "POST"} data-netlify={paid ? undefined : "true"} data-netlify-honeypot={paid ? undefined : "company-website"} className="astro-form" onSubmit={handleSubmit(submit,invalidSubmit)} noValidate>
     {!paid && <><input type="hidden" name="form-name" value="analyse-gratuite"/><div className="honeypot" aria-hidden="true"><label htmlFor="company-website">Ne pas remplir</label><input id="company-website" tabIndex={-1} autoComplete="off" {...register("company-website")}/></div></>}
@@ -178,7 +179,7 @@ function PaidExistingChartForm({ accountEmail, chart }: { accountEmail: string; 
   }
 
   if (!chart) return null;
-  if (status === "success") return <div className="astro-form paid-success" role="status"><Check/><span className="eyebrow">Demande confirmée</span><h3>Votre question a bien été transmise</h3><p>Votre analyse personnalisée sera disponible sous 48 heures.</p><strong>Analyse en préparation</strong><p>{remaining} Soleil disponible</p></div>;
+  if (status === "success") return <div className="astro-form paid-success" role="status"><Check/><span className="eyebrow">Demande confirmée</span><h3>Votre question a bien été transmise</h3><p>Votre analyse personnalisée sera disponible sous 48 heures.</p><strong>Analyse en préparation</strong><p>{formatSunCount(remaining ?? 0)} disponible{(remaining ?? 0) > 1 ? "s" : ""}</p></div>;
 
   return <form className="astro-form" onSubmit={submit} noValidate>
     <ol className="form-progress form-progress--compact" aria-label="Progression du formulaire">{["Sujet","Question","Vérification"].map((label,index)=><li key={label} aria-current={index===step?"step":undefined} className={index<=step?"active":""}><span>{index<step?<Check size={15}/>:index+1}</span><em>{label}</em></li>)}</ol>

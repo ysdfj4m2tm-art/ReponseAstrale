@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { calculateExpiration, commerceProducts, formatSunLabel, getCommerceProduct, isQuestionSubmittedBeforeExpiration, obsoleteStripePriceIds, sunRule } from "@/content/commerce";
+import { calculateExpiration, commerceProducts, formatSunCount, getCommerceProduct, isQuestionSubmittedBeforeExpiration, obsoleteStripePriceIds, sunRule } from "@/content/commerce";
 import { executionConsentText, isLegalReadyForLivePayments } from "@/content/legal";
 import { validateCheckoutInput, validatePaidLine } from "@/lib/commerce/validation";
 
 describe("catalogue Soleil", () => {
   it("accorde correctement le singulier et le pluriel", () => {
-    expect(formatSunLabel(0)).toBe("0 Soleils");
-    expect(formatSunLabel(1)).toBe("1 Soleil");
-    expect(formatSunLabel(3)).toBe("3 Soleils");
+    expect(formatSunCount(0)).toBe("0 Soleil");
+    expect(formatSunCount(1)).toBe("1 Soleil");
+    expect(formatSunCount(2)).toBe("2 Soleils");
   });
   it("publie les deux offres contractuelles", () => {
     expect(commerceProducts.one_sun).toMatchObject({ priceCents: 1990, sunCount: 1, validityDays: 7 });
