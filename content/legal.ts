@@ -20,10 +20,9 @@ export const legalConfig = {
   mediatorName: null as string | null,
   mediatorAddress: null as string | null,
   mediatorWebsite: null as string | null,
-  emailProvider: "Resend",
   aiProvider: "Google Gemini API",
   cgvVersion: "2026-08-04",
-  privacyVersion: "2026-08-04",
+  privacyVersion: "2026-08-05",
   executionConsentVersion: "2026-08-04",
 } as const;
 
@@ -69,6 +68,6 @@ export const legalInfo = {
   vatNumber: legalConfig.vatNumber,
   phone: legalConfig.publicPhone,
   hostAddress: legalConfig.hostingProviderAddress,
-  processors: ["Netlify", "Neon", "Stripe", "Resend", "Google Gemini API"],
+  processors: ["Netlify", "Neon", "WorkOS", "Stripe", "Google Gemini API"],
   internationalTransfers: "À documenter fournisseur par fournisseur avant production.",
 };
