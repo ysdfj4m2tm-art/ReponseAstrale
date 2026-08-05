@@ -4,6 +4,7 @@ import { safeInternalRedirect } from "@/lib/auth/redirects";
 
 const authMocks = vi.hoisted(() => ({
   withAuth: vi.fn(),
+  getSignInUrl: vi.fn(),
   signOut: vi.fn(),
 }));
 const navigationMocks = vi.hoisted(() => ({ redirect: vi.fn((target: string) => { throw new Error(`REDIRECT:${target}`); }) }));
@@ -11,6 +12,7 @@ const databaseMocks = vi.hoisted(() => ({ sql: vi.fn(), getSqlClient: vi.fn() })
 
 vi.mock("@workos-inc/authkit-nextjs", () => ({
   withAuth: authMocks.withAuth,
+  getSignInUrl: authMocks.getSignInUrl,
   signOut: authMocks.signOut,
 }));
 vi.mock("next/navigation", () => navigationMocks);
@@ -79,5 +81,14 @@ describe("sécurité WorkOS AuthKit", () => {
     const { GET } = await import("@/app/deconnexion/route");
     await GET();
     expect(authMocks.signOut).toHaveBeenCalledOnce();
+  });
+
+  it("amorce la connexion depuis un Route Handler", async () => {
+    authMocks.getSignInUrl.mockResolvedValue("https://authkit.example.test/authorize");
+    const { GET } = await import("@/app/connexion/route");
+
+    await expect(GET(new Request("https://example.test/connexion?returnTo=%2Fespace%2Fquestions")))
+      .rejects.toThrow("REDIRECT:https://authkit.example.test/authorize");
+    expect(authMocks.getSignInUrl).toHaveBeenCalledWith({ returnTo: "/espace/questions" });
   });
 });

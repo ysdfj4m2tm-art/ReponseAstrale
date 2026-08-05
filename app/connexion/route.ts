@@ -4,11 +4,7 @@ import { safeInternalRedirect } from "@/lib/auth/redirects";
 
 export const dynamic = "force-dynamic";
 
-export default async function ConnexionPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ returnTo?: string }>;
-}) {
-  const { returnTo } = await searchParams;
+export async function GET(request: Request) {
+  const returnTo = new URL(request.url).searchParams.get("returnTo");
   redirect(await getSignInUrl({ returnTo: safeInternalRedirect(returnTo) }));
 }
