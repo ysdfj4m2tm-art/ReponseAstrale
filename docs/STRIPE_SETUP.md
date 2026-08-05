@@ -15,14 +15,24 @@ Configurer côté serveur seulement : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRE
 
 ## Webhook
 
-Créer un endpoint test vers `/api/stripe/webhook` pour `checkout.session.completed`. Le handler lit le corps brut, vérifie la signature, déduplique l’événement et contrôle le prix, le montant, la devise et le produit avant attribution transactionnelle des Soleils. La page succès n’attribue rien.
+Créer un endpoint test vers `/api/stripe/webhook` pour :
+
+- `checkout.session.completed` ;
+- `checkout.session.async_payment_succeeded` ;
+- `checkout.session.async_payment_failed` ;
+- `checkout.session.expired` ;
+- `payment_intent.payment_failed` ;
+- `charge.refunded` ;
+- `charge.dispute.created`.
+
+Le handler lit le corps brut, vérifie la signature et le mode test/live, déduplique l’événement et contrôle le prix, le montant, la devise et le produit avant attribution transactionnelle des Soleils. La page succès n’attribue rien.
 
 En local : utiliser Stripe CLI avec `stripe listen --forward-to localhost:3000/api/stripe/webhook`, puis placer le secret temporaire uniquement dans `.env.local`. Tester la répétition du même événement.
 
 ## Remboursements
 
-Le remboursement reste une opération Stripe administrative. Avant d’accorder un remboursement, inspecter l’état de la commande, du Soleil et de la question. La synchronisation automatique des événements `charge.refunded` et litiges reste à ajouter avant production réelle.
+Le remboursement reste une opération Stripe administrative soumise à autorisation humaine. Un remboursement intégral passe la commande et le droit associé à `refunded`, met le solde restant à zéro et conserve les questions déjà soumises. Un remboursement partiel est journalisé sans révoquer automatiquement l’intégralité du lot. Un litige suspend le solde encore disponible sans supprimer les questions déjà consommées.
 
 ## Passage futur en production
 
-Créer des produits/prix live distincts, un endpoint webhook live et des clés live limitées. Compléter d’abord la checklist juridique, exécuter une preview, confirmer les e-mails et la fiscalité, puis basculer `STRIPE_ENVIRONMENT=live`. Le code bloque les clés live en environnement test et bloque le live si les champs juridiques obligatoires restent incomplets.
+Créer des produits/prix live distincts, un endpoint webhook live et des clés live limitées. Compléter d’abord la checklist juridique, exécuter une preview, confirmer la fiscalité, puis basculer `STRIPE_ENVIRONMENT=live`. Le code bloque les clés live en environnement test, vérifie le mode des événements et des Price, et bloque le live si les champs juridiques obligatoires restent incomplets.

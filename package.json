@@ -17,7 +17,8 @@
     "test:db": "node scripts/integration-database.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:verify": "node scripts/verify-database.mjs"
+    "db:verify": "node scripts/verify-database.mjs",
+    "preflight:production": "node --experimental-strip-types scripts/preflight-production.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

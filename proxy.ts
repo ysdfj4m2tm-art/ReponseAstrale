@@ -1,4 +1,10 @@
 import { authkitProxy } from "@workos-inc/authkit-nextjs";
+import { assertEnvironment, getDeploymentKind } from "@/lib/env-rules";
+
+const deploymentKind = getDeploymentKind();
+if (deploymentKind === "production" || deploymentKind === "deploy-preview" || deploymentKind === "branch-deploy") {
+  assertEnvironment(deploymentKind);
+}
 
 export default authkitProxy({
   redirectUri: process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI,

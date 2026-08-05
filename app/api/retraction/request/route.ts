@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSqlClient } from "@/db/client";
-import { sendRetractionVerification } from "@/lib/email";
 import { normalizeEmail } from "@/lib/env";
 import { checkRateLimit, requestRateLimitKey } from "@/lib/rate-limit";
 import { createOpaqueToken, hashOpaqueToken } from "@/lib/security";
@@ -24,10 +23,9 @@ export async function POST(request: Request) {
   if (orders.length) {
     const token = createOpaqueToken();
     await sql`
-      INSERT INTO retraction_requests (order_id, email_normalized, verification_token_hash, verification_expires_at)
-      VALUES (${orders[0].id}::uuid, ${email}, ${hashOpaqueToken(token)}, now() + interval '24 hours')
+      INSERT INTO retraction_requests (order_id, email_normalized, status, verification_token_hash, verification_expires_at)
+      VALUES (${orders[0].id}::uuid, ${email}, 'requested', ${hashOpaqueToken(token)}, now())
     `;
-    await sendRetractionVerification(email, token);
   }
   return NextResponse.json({ accepted: true }, { status: 202 });
 }

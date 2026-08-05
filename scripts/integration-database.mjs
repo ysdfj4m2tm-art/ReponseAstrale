@@ -21,6 +21,21 @@ try {
 
   const order = (await client.query("SELECT * FROM create_pending_order($1,'one_sun',NULL,'test','test','test')", [email])).rows[0];
   assert.equal(order.amount_cents, 1990);
+
+  const failedOrder = (await client.query("SELECT * FROM create_pending_order($1,'one_sun',NULL,'test','test','test')", [`failed-${email}`])).rows[0];
+  assert.equal((await client.query("SELECT record_order_payment_failure($1,$2,$3,$4) AS changed", [failedOrder.order_id, `cs_failed_${marker}`, `pi_failed_${marker}`, "test"])).rows[0].changed, true);
+  assert.equal((await client.query("SELECT status FROM orders WHERE id=$1", [failedOrder.order_id])).rows[0].status, "payment_failed");
+
+  const expiredOrder = (await client.query("SELECT * FROM create_pending_order($1,'one_sun',NULL,'test','test','test')", [`expired-${email}`])).rows[0];
+  assert.equal((await client.query("SELECT record_checkout_expiration($1,$2) AS changed", [expiredOrder.order_id, `cs_expired_${marker}`])).rows[0].changed, true);
+  assert.equal((await client.query("SELECT status FROM orders WHERE id=$1", [expiredOrder.order_id])).rows[0].status, "expired");
+
+  const disputedOrder = (await client.query("SELECT * FROM create_pending_order($1,'three_suns',NULL,'test','test','test')", [`disputed-${email}`])).rows[0];
+  await client.query("SELECT grant_suns_for_paid_order($1,$2,$3,$4,now())", [disputedOrder.order_id, `cs_disputed_${marker}`, `pi_disputed_${marker}`, null]);
+  assert.equal((await client.query("SELECT record_order_dispute($1,$2) AS order_id", [`pi_disputed_${marker}`, `dp_${marker}`])).rows[0].order_id, disputedOrder.order_id);
+  assert.equal((await client.query("SELECT status FROM sun_entitlements WHERE order_id=$1", [disputedOrder.order_id])).rows[0].status, "suspended");
+  await client.query("SELECT record_order_refund($1,$2,true,$3)", [`pi_disputed_${marker}`, `ch_${marker}`, 4990]);
+  assert.deepEqual((await client.query("SELECT status,quantity_remaining FROM sun_entitlements WHERE order_id=$1", [disputedOrder.order_id])).rows[0], { status: "refunded", quantity_remaining: 0 });
   await client.query("SELECT grant_suns_for_paid_order($1,$2,$3,$4,now())", [order.order_id, `cs_${marker}`, `pi_${marker}`, null]);
   await client.query("SELECT claim_paid_orders_for_profile($1)", [profile.id]);
 
@@ -100,7 +115,7 @@ try {
   await client.query("ROLLBACK TO SAVEPOINT no_sun");
 
   await client.query("ROLLBACK");
-  console.log("Intégration Neon validée avec rollback : création de thème, question, FIFO, idempotence, isolation et atomicité.");
+  console.log("Intégration Neon validée avec rollback : thèmes, questions, FIFO, idempotence, échecs, expirations, litiges et remboursements.");
 } catch (error) {
   await client.query("ROLLBACK");
   throw error;

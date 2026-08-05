@@ -1,4 +1,6 @@
 import { isLegalReadyForLivePayments } from "@/content/legal";
+import { assertEnvironment, EnvironmentValidationError, getDeploymentKind } from "@/lib/env-rules";
+export { EnvironmentValidationError } from "@/lib/env-rules";
 
 export class ConfigurationError extends Error {
   constructor(public readonly missing: string[]) {
@@ -31,6 +33,15 @@ export function getStripeEnvironment() {
     throw new Error("Une clé Stripe live ne peut pas être utilisée dans l’environnement de test.");
   }
   return value;
+}
+
+export function assertCommerceEnvironment() {
+  const kind = getDeploymentKind();
+  assertEnvironment(kind === "production" ? "production" : kind);
+  if (kind === "production" && !isLegalReadyForLivePayments()) {
+    throw new EnvironmentValidationError(["LEGAL_CONFIGURATION: informations obligatoires incomplètes"]);
+  }
+  return kind;
 }
 
 export function normalizeEmail(email: string) {

@@ -6,7 +6,7 @@
 - Développement et Deploy Preview : branche `codex-sales-funnel` uniquement.
 - Production : aucune migration, fusion ou modification sans validation distincte.
 
-Le script `npm run db:migrate` et les contrôles DB refusent toute branche dont `NEON_BRANCH` n’est pas exactement `codex-sales-funnel`.
+Le script `npm run db:migrate` accepte `codex-sales-funnel`. Il n’accepte `production` qu’avec `CONFIRM_PRODUCTION_MIGRATION=APPLY_VERSIONED_MIGRATIONS`, à définir uniquement après autorisation humaine explicite. Les tests d’intégration avec écritures restent interdits en Production.
 
 ## Connexions
 
@@ -19,7 +19,7 @@ Le type et les contraintes existants de `profiles.auth_user_id` conviennent. La 
 
 ## Migrations et vérification
 
-1. Vérifier la branche Neon et `NEON_BRANCH=codex-sales-funnel`.
+1. Vérifier la branche Neon et la valeur explicite de `NEON_BRANCH`.
 2. N’exécuter `npm run db:migrate` que si une nouvelle migration SQL est réellement présente.
 3. Exécuter `npm run db:verify` puis `npm run test:db` ; ce dernier travaille dans une transaction annulée.
 4. Avant toute promotion future, créer une branche de sauvegarde de production, inspecter le SQL et tester la restauration.

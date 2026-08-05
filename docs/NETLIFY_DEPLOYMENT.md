@@ -4,7 +4,7 @@ Le site Next.js 16 utilise `netlify.toml`, Node 22, les Route Handlers et `proxy
 
 ## Variables Deploy Preview
 
-Configurer côté serveur `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED` et les variables Stripe test. La convention officielle du SDK `@workos-inc/authkit-nextjs@4.3.1` reste `NEXT_PUBLIC_WORKOS_REDIRECT_URI`; elle doit valoir exactement `https://deploy-preview-1--reponseastrale.netlify.app/callback` pour la preview indiquée. Cette variable publique ne contient aucun secret.
+Configurer côté serveur `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED` et les variables Stripe test. Définir aussi `NEON_BRANCH=codex-sales-funnel` et `WORKOS_ENVIRONMENT=staging`. La convention officielle du SDK `@workos-inc/authkit-nextjs@4.3.1` reste `NEXT_PUBLIC_WORKOS_REDIRECT_URI`; elle doit correspondre exactement à l’URL de callback de la preview. Cette variable publique ne contient aucun secret.
 
 Conserver `STRIPE_ENVIRONMENT=test` et `STRIPE_AUTOMATIC_TAX=false`. `APP_URL` doit être l’origine exacte de la preview. Ne jamais utiliser de clé Stripe live. `WORKOS_COOKIE_SAMESITE=lax` convient au retour AuthKit intersite ; le SDK impose HttpOnly et choisit Secure en HTTPS. Ne définir ni domaine de cookie partagé ni `SameSite=none` pour ce parcours.
 
@@ -30,4 +30,4 @@ La réception réelle du code e-mail et le paiement de bout en bout ne sont vali
 
 ## Production
 
-La production commerciale reste bloquée par `docs/LEGAL_CHECKLIST.md`. Ne pas fusionner, déployer en production, configurer Stripe Live ou modifier Neon production dans ce chantier.
+Les variables Production sont configurées exclusivement dans le contexte **Production** de Netlify. Les valeurs Stripe test, WorkOS Staging et Neon `codex-sales-funnel` restent exclusivement dans **Deploy Previews**. La checklist juridique et `npm run preflight:production` doivent être validés avant toute fusion. La procédure complète est dans `docs/PRODUCTION_RUNBOOK.md`.
