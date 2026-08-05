@@ -48,6 +48,7 @@ const functions = await sql`
       "expire_sun_entitlements",
       "grant_suns_for_paid_order",
       "restore_sun_for_question",
+      "submit_paid_question",
     ]})
   ORDER BY proname
 `;
@@ -55,8 +56,8 @@ const functions = await sql`
 if (tables.length !== expectedTables.length) {
   throw new Error(`Schéma incomplet : ${tables.length}/${expectedTables.length} tables métier.`);
 }
-if (functions.length !== 5) {
-  throw new Error(`Fonctions transactionnelles incomplètes : ${functions.length}/5.`);
+if (functions.length !== 6) {
+  throw new Error(`Fonctions transactionnelles incomplètes : ${functions.length}/6.`);
 }
 
 console.log(`Branche vérifiée : ${process.env.NEON_BRANCH}`);

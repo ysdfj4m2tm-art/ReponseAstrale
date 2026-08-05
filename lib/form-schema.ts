@@ -10,6 +10,7 @@ export const formSchema = z.object({
   birthTime: optional,
   birthTimeUnknown: z.boolean(),
   birthPlace: z.string().trim().min(2, "Indiquez votre ville et votre pays de naissance.").max(160),
+  birthCountry: optional,
   firstName: z.string().trim().min(2, "Indiquez votre prénom.").max(80),
   email: z.email("Indiquez une adresse e-mail valide."),
   designation: z.enum(["femme", "homme", "autre", "non-precise"]),
@@ -56,7 +57,7 @@ export const formSchema = z.object({
 export type AnalysisFormData = z.input<typeof formSchema>;
 
 export const defaultFormValues: AnalysisFormData = {
-  category: "", question: "", birthDate: "", birthTime: "", birthTimeUnknown: false, birthPlace: "", firstName: "", email: "", designation: "non-precise", ageConfirmed: false as never, consentData: false as never, consentMarketing: false, consentLimits: false as never,
+  category: "", question: "", birthDate: "", birthTime: "", birthTimeUnknown: false, birthPlace: "", birthCountry: "", firstName: "", email: "", designation: "non-precise", ageConfirmed: false as never, consentData: false as never, consentMarketing: false, consentLimits: false as never,
   partnerName: "", partnerBirthDate: "", partnerBirthTime: "", partnerTimeUnknown: false, partnerBirthPlace: "", relationshipType: "", thirdPartyConsent: false,
   eventDate: "", eventTime: "", eventTimeUnknown: false, eventPlace: "", eventType: "", eventDescription: "", periodStart: "", periodEnd: "", periodPlace: "", periodContext: "", "company-website": "",
 };

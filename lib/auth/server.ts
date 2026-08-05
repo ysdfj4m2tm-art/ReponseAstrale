@@ -29,3 +29,9 @@ export async function requireAuthenticatedUser() {
   if (!user || !user.emailVerified) redirect("/connexion");
   return user;
 }
+
+export async function requireAuthenticatedUserForApi() {
+  const user = await getAuthenticatedUser();
+  if (!user || !user.emailVerified) return null;
+  return user;
+}

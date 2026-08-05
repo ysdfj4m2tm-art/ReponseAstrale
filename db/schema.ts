@@ -23,6 +23,7 @@ export const orderStatusEnum = pgEnum("order_status", [
 ]);
 export const entitlementStatusEnum = pgEnum("entitlement_status", ["active", "consumed", "expired", "suspended", "refunded"]);
 export const questionStatusEnum = pgEnum("question_status", ["submitted", "processing", "answered", "failed", "cancelled"]);
+export const chartCalculationStatusEnum = pgEnum("chart_calculation_status", ["pending_calculation", "calculated", "failed"]);
 export const stripeEventStatusEnum = pgEnum("stripe_event_status", ["processing", "processed", "failed", "ignored"]);
 export const retractionStatusEnum = pgEnum("retraction_status", ["requested", "email_verification_pending", "under_review", "accepted", "rejected", "refunded"]);
 
@@ -44,8 +45,10 @@ export const charts = pgTable("charts", {
   birthTime: text("birth_time"),
   birthTimeKnown: boolean("birth_time_known").default(false).notNull(),
   birthPlace: text("birth_place").notNull(),
-  timezone: text("timezone").notNull(),
-  chartDataJson: jsonb("chart_data_json").default({}).notNull(),
+  birthCountry: text("birth_country"),
+  timezone: text("timezone"),
+  chartDataJson: jsonb("chart_data_json"),
+  calculationStatus: chartCalculationStatusEnum("calculation_status").default("pending_calculation").notNull(),
   ...timestamps,
 }, (table) => [uniqueIndex("charts_external_case_id_uq").on(table.externalCaseId), index("charts_user_idx").on(table.userId)]);
 
@@ -119,9 +122,11 @@ export const questions = pgTable("questions", {
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "restrict" }),
   chartId: uuid("chart_id").notNull().references(() => charts.id, { onDelete: "restrict" }),
   entitlementId: uuid("entitlement_id").notNull().references(() => sunEntitlements.id, { onDelete: "restrict" }),
+  category: text("category").notNull(),
   questionText: text("question_text").notNull(),
   status: questionStatusEnum("status").default("submitted").notNull(),
   idempotencyKey: text("idempotency_key").notNull().unique(),
+  requestFingerprint: text("request_fingerprint").notNull(),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
   processingStartedAt: timestamp("processing_started_at", { withTimezone: true }),
   answeredAt: timestamp("answered_at", { withTimezone: true }),
