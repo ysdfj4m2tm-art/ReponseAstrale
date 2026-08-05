@@ -1668,7 +1668,7 @@ h3 {
 .auth-card { width: min(600px, calc(100% - 40px)); margin: auto; }
 .account-heading { max-width: 760px; }
 .account-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 26px 0 32px; }
-.account-nav a { background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 9px 15px; }
+.account-nav a, .account-nav button { background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 9px 15px; }
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .dashboard-card { background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 30px; }
 .dashboard-card > span { color: #69617b; }

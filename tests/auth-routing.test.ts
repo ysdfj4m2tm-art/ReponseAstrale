@@ -16,7 +16,6 @@ describe("routage WorkOS AuthKit", () => {
   it.each([
     "/connexion",
     "/callback?code=test&state=test",
-    "/deconnexion",
     "/espace",
     "/espace/questions",
     "/api/questions",
@@ -28,6 +27,7 @@ describe("routage WorkOS AuthKit", () => {
   it.each([
     "/",
     "/exploration",
+    "/deconnexion",
     "/_next/static/chunks/app.js",
     "/_next/image?url=%2Flogo.png",
     "/favicon.ico",
@@ -37,11 +37,18 @@ describe("routage WorkOS AuthKit", () => {
     expect(matchesProxy(url)).toBe(false);
   });
 
-  it("exécute les écritures AuthKit uniquement dans des Route Handlers couverts", () => {
+  it("réserve la déconnexion à une Server Action explicite", () => {
     expect(existsSync("app/connexion/page.tsx")).toBe(false);
     expect(readFileSync("app/connexion/route.ts", "utf8")).toMatch(/export async function GET/);
-    expect(readFileSync("app/deconnexion/route.ts", "utf8")).toMatch(/export const (GET|POST)/);
+    expect(existsSync("app/deconnexion/route.ts")).toBe(false);
     expect(readFileSync("app/callback/route.ts", "utf8")).toMatch(/handleAuth/);
+
+    const accountNav = readFileSync("components/account/AccountNav.tsx", "utf8");
+    const logoutAction = readFileSync("components/account/actions.ts", "utf8");
+    expect(accountNav).toMatch(/<form action=\{logout\}>/);
+    expect(accountNav).not.toMatch(/href=["']\/deconnexion|router\.(push|replace)\(["']\/deconnexion|fetch\(["']\/deconnexion/);
+    expect(logoutAction).toMatch(/^["']use server["'];/);
+    expect(logoutAction).toMatch(/signOut\(\{[\s\S]*returnTo:\s*process\.env\.APP_URL/);
   });
 
   it("ne modifie aucun cookie et n'amorce aucun flux AuthKit depuis un Server Component", () => {

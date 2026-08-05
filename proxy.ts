@@ -8,7 +8,6 @@ export const config = {
   matcher: [
     "/connexion",
     "/callback",
-    "/deconnexion",
     "/espace/:path*",
     "/api/questions/:path*",
     "/api/retraction/:path*",

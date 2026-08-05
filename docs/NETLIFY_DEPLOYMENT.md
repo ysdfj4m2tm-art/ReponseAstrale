@@ -20,7 +20,7 @@ Dans WorkOS Staging, vérifier :
 
 1. Ne promouvoir aucune migration vers Neon production.
 2. Lancer lint, TypeScript, tests, tests DB, vérification DB, build, audit et `git diff --check`.
-3. Ouvrir `/connexion`, effectuer réellement le code Magic Auth, puis contrôler `/callback`, `/espace` et `/deconnexion`.
+3. Ouvrir `/connexion`, effectuer réellement le code Magic Auth, puis contrôler `/callback`, `/espace` et le bouton `Déconnexion`.
 4. Confirmer qu’une seconde visite à `/espace` après déconnexion ou expiration repart vers `/connexion`.
 5. Faire un paiement Stripe test, rejouer le webhook et vérifier le rattachement uniquement avec le même e-mail WorkOS vérifié.
 6. Inspecter les logs sans corps de requête, e-mail, code, jeton ni secret.

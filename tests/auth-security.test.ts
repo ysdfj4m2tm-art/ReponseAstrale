@@ -78,9 +78,10 @@ describe("sécurité WorkOS AuthKit", () => {
 
   it("appelle la déconnexion du SDK", async () => {
     authMocks.signOut.mockResolvedValue(undefined);
-    const { GET } = await import("@/app/deconnexion/route");
-    await GET();
+    const { logout } = await import("@/components/account/actions");
+    await logout();
     expect(authMocks.signOut).toHaveBeenCalledOnce();
+    expect(authMocks.signOut).toHaveBeenCalledWith({ returnTo: process.env.APP_URL });
   });
 
   it("amorce la connexion depuis un Route Handler", async () => {
