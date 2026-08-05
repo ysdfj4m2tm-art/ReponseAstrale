@@ -16,6 +16,11 @@ try {
   const marker = randomUUID();
   const email = `integration-${marker}@example.invalid`;
   const profile = (await client.query("INSERT INTO profiles(auth_user_id,email_normalized) VALUES($1,$2) RETURNING id", [`test-${marker}`, email])).rows[0];
+  await client.query("INSERT INTO profiles(auth_user_id,email_normalized) VALUES($1,$2) ON CONFLICT(auth_user_id) DO UPDATE SET email_normalized=EXCLUDED.email_normalized", [`test-${marker}`, email]);
+  const profileCount = (await client.query("SELECT count(*)::int AS count FROM profiles WHERE auth_user_id=$1", [`test-${marker}`])).rows[0];
+  assert.equal(profileCount.count, 1, "le profil authentifié doit rester unique");
+  const otherProfile = (await client.query("INSERT INTO profiles(auth_user_id,email_normalized) VALUES($1,$2) RETURNING id", [`other-${marker}`, `other-${email}`])).rows[0];
+  const otherChart = (await client.query("INSERT INTO charts(user_id,first_name,birth_date,birth_place,timezone) VALUES($1,'Autre','2001-01-01','Paris','Europe/Paris') RETURNING id", [otherProfile.id])).rows[0];
   const chart = (await client.query("INSERT INTO charts(user_id,first_name,birth_date,birth_place,timezone) VALUES($1,'Test','2000-01-01','Lille','Europe/Paris') RETURNING id", [profile.id])).rows[0];
   const order = (await client.query("SELECT * FROM create_pending_order($1,'one_sun',$2,'test','test','test')", [email, chart.id])).rows[0];
   assert.equal(order.amount_cents, 1990);
@@ -25,6 +30,13 @@ try {
   const replay = (await client.query("SELECT * FROM consume_sun_for_question($1,$2,$3,$4)", [profile.id, chart.id, "Une question suffisamment longue pour le test.", marker])).rows[0];
   assert.equal(first.question_id, replay.question_id, "l’idempotence doit conserver la même question");
   assert.equal(first.quantity_remaining, 0);
+  await client.query("SAVEPOINT forbidden_chart_check");
+  await assert.rejects(
+    client.query("SELECT * FROM consume_sun_for_question($1,$2,$3,$4)", [profile.id, otherChart.id, "Question interdite sur le dossier d’un autre utilisateur.", `forbidden-${marker}`]),
+    /CHART_FORBIDDEN/,
+    "un utilisateur ne doit jamais consommer sur le dossier d’un autre",
+  );
+  await client.query("ROLLBACK TO SAVEPOINT forbidden_chart_check");
   const restored = (await client.query("SELECT restore_sun_for_question($1,'incident avant traitement') AS restored", [first.question_id])).rows[0];
   const restoredAgain = (await client.query("SELECT restore_sun_for_question($1,'nouvelle tentative') AS restored", [first.question_id])).rows[0];
   assert.equal(restored.restored, true, "le Soleil doit être restauré avant traitement");
