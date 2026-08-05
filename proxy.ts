@@ -6,10 +6,6 @@ export default authkitProxy({
 
 export const config = {
   matcher: [
-    "/connexion",
-    "/callback",
-    "/espace/:path*",
-    "/api/questions/:path*",
-    "/api/retraction/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)",
   ],
 };

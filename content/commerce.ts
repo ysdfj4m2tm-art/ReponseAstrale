@@ -50,6 +50,10 @@ export function formatEuro(priceCents: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(priceCents / 100);
 }
 
+export function formatSunLabel(count: number) {
+  return `${count} ${count === 1 ? "Soleil" : "Soleils"}`;
+}
+
 export function calculateExpiration(paidAt: Date, validityDays: number) {
   return new Date(paidAt.getTime() + validityDays * 24 * 60 * 60 * 1000);
 }

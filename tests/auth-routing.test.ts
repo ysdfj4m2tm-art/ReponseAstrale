@@ -4,7 +4,7 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 
 const proxySource = readFileSync("proxy.ts", "utf8");
 const matcherBlock = proxySource.match(/matcher:\s*\[([\s\S]*?)\]/)?.[1] ?? "";
-const matcher = [...matcherBlock.matchAll(/["']([^"']+)["']/g)].map((match) => match[1]);
+const matcher = [...matcherBlock.matchAll(/["']([^"']+)["']/g)].map((match) => JSON.parse(`"${match[1]}"`) as string);
 const matchesProxy = (url: string) => unstable_doesMiddlewareMatch({ config: { matcher }, url });
 
 describe("routage WorkOS AuthKit", () => {
@@ -14,8 +14,11 @@ describe("routage WorkOS AuthKit", () => {
   });
 
   it.each([
+    "/",
     "/connexion",
+    "/connexion/demarrer?returnTo=%2Fespace",
     "/callback?code=test&state=test",
+    "/exploration",
     "/espace",
     "/espace/questions",
     "/api/questions",
@@ -25,9 +28,6 @@ describe("routage WorkOS AuthKit", () => {
   });
 
   it.each([
-    "/",
-    "/exploration",
-    "/deconnexion",
     "/_next/static/chunks/app.js",
     "/_next/image?url=%2Flogo.png",
     "/favicon.ico",
@@ -38,8 +38,8 @@ describe("routage WorkOS AuthKit", () => {
   });
 
   it("réserve la déconnexion à une Server Action explicite", () => {
-    expect(existsSync("app/connexion/page.tsx")).toBe(false);
-    expect(readFileSync("app/connexion/route.ts", "utf8")).toMatch(/export async function GET/);
+    expect(existsSync("app/connexion/page.tsx")).toBe(true);
+    expect(readFileSync("app/connexion/demarrer/route.ts", "utf8")).toMatch(/export async function GET/);
     expect(existsSync("app/deconnexion/route.ts")).toBe(false);
     expect(readFileSync("app/callback/route.ts", "utf8")).toMatch(/handleAuth/);
 
@@ -67,6 +67,7 @@ describe("routage WorkOS AuthKit", () => {
 
   it("limite withAuth aux consommateurs couverts par le proxy", () => {
     expect(readFileSync("lib/auth/server.ts", "utf8")).toMatch(/withAuth\(\)/);
+    expect(readFileSync("components/layout/Header.tsx", "utf8")).toMatch(/getAuthenticatedUser/);
 
     const consumers = [
       "app/espace/layout.tsx",

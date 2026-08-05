@@ -39,6 +39,17 @@ describe("sécurité WorkOS AuthKit", () => {
     await expect(requireAuthenticatedUser()).resolves.toMatchObject({ id: "user_workos", emailVerified: true });
   });
 
+  it("construit le résumé du header depuis la session et Neon côté serveur", async () => {
+    authMocks.withAuth.mockResolvedValue({
+      user: { id: "user_workos", email: "camille@example.fr", emailVerified: true, firstName: "Camille" },
+    });
+    databaseMocks.sql.mockResolvedValue([{ suns: 3 }]);
+    const { Header } = await import("@/components/layout/Header");
+
+    await expect(Header()).resolves.toMatchObject({ props: { account: { email: "camille@example.fr", suns: 3 } } });
+    expect(databaseMocks.sql).toHaveBeenCalledOnce();
+  });
+
   it("refuse une session expirée ou invalide", async () => {
     authMocks.withAuth.mockRejectedValue(new Error("expired session"));
     await expect(getAuthenticatedUser()).resolves.toBeNull();
@@ -86,7 +97,7 @@ describe("sécurité WorkOS AuthKit", () => {
 
   it("amorce la connexion depuis un Route Handler", async () => {
     authMocks.getSignInUrl.mockResolvedValue("https://authkit.example.test/authorize");
-    const { GET } = await import("@/app/connexion/route");
+    const { GET } = await import("@/app/connexion/demarrer/route");
 
     await expect(GET(new Request("https://example.test/connexion?returnTo=%2Fespace%2Fquestions")))
       .rejects.toThrow("REDIRECT:https://authkit.example.test/authorize");

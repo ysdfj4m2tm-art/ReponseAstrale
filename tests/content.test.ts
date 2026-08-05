@@ -4,6 +4,16 @@ import { describe, expect, it } from "vitest";
 import { questionCategories } from "@/content/questions";
 
 describe("Contenus demandés", () => {
+  it("affiche le nouveau hero, la roue et le retour depuis l’achat", () => {
+    const home = readFileSync(join(process.cwd(), "app", "page.tsx"), "utf8");
+    const exploration = readFileSync(join(process.cwd(), "app", "exploration", "page.tsx"), "utf8");
+    expect(home).toContain("Interrogez votre <em>thème astral</em>");
+    expect(home).toContain("<div className=\"hero-wheel\"><AstroWheel/>");
+    expect(home).toContain('<AstralQuestionForm mode="free"/>');
+    expect(exploration).toContain("← Retour à mon espace");
+    expect(exploration).toMatch(/user\?\.emailVerified/);
+  });
+
   it("conserve les intitulés des cartes de questions", () => {
     const byId = Object.fromEntries(questionCategories.map((item) => [item.id, item]));
     expect(byId.couple.examples[0]).toBe("Quelles sont les forces/fragilités de ma relation actuelle ?");
