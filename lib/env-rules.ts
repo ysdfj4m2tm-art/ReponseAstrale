@@ -69,6 +69,12 @@ export function getDeploymentKind(env: EnvironmentMap = process.env): Deployment
   const context = value(env, "CONTEXT");
   if (context === "production" || context === "deploy-preview" || context === "branch-deploy") return context;
   if (value(env, "NODE_ENV") === "test") return "test";
+  if (value(env, "APP_URL") === PRODUCTION_ORIGIN
+    && value(env, "NEON_BRANCH") === "production"
+    && value(env, "STRIPE_ENVIRONMENT") === "live"
+    && value(env, "WORKOS_ENVIRONMENT") === "production") {
+    return "production";
+  }
   return "development";
 }
 

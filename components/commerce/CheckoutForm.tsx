@@ -30,7 +30,7 @@ export function CheckoutForm({ chartToken }: { chartToken?: string }) {
       if (!response.ok || !result.url) throw new Error(result.error || "CHECKOUT_FAILED");
       window.location.assign(result.url);
     } catch {
-      setError("Le paiement de test n’est pas disponible pour le moment. Aucun débit n’a été effectué.");
+      setError("Le paiement n’est pas disponible pour le moment. Aucun débit n’a été effectué.");
       setPending(false);
     }
   }

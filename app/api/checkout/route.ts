@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     if (error instanceof ConfigurationError || error instanceof EnvironmentValidationError) {
+      console.error("checkout_unavailable", error instanceof ConfigurationError ? "CONFIGURATION_ERROR" : "ENVIRONMENT_VALIDATION_ERROR");
       return NextResponse.json({ error: "Paiement indisponible : configuration serveur incomplète." }, { status: 503 });
     }
     console.error("checkout_failed", error instanceof Error ? error.name : "UnknownError");

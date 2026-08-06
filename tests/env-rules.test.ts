@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validatePreviewEnvironment, validateProductionEnvironment } from "@/lib/env-rules";
+import { getDeploymentKind, validatePreviewEnvironment, validateProductionEnvironment } from "@/lib/env-rules";
 
 const production = {
   APP_URL: "https://reponseastrale.fr",
@@ -20,6 +20,10 @@ const production = {
 };
 
 describe("séparation des environnements", () => {
+  it("reconnaît Production au runtime même sans CONTEXT Netlify", () => {
+    expect(getDeploymentKind({ ...production, NODE_ENV: "production" })).toBe("production");
+  });
+
   it("accepte une forme Production complète", () => {
     expect(validateProductionEnvironment(production)).toEqual([]);
   });
