@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateExpiration, commerceProducts, formatSunCount, getCommerceProduct, isQuestionSubmittedBeforeExpiration, obsoleteStripePriceIds, sunRule } from "@/content/commerce";
-import { executionConsentText, isLegalReadyForLivePayments } from "@/content/legal";
+import { executionConsentText, isConsumerMediatorConfigured, isLegalReadyForLivePayments } from "@/content/legal";
 import { validateCheckoutInput, validatePaidLine } from "@/lib/commerce/validation";
 
 describe("catalogue Soleil", () => {
@@ -31,6 +31,7 @@ describe("catalogue Soleil", () => {
 });
 
 describe("garde-fous juridiques", () => {
-  it("bloque le live tant que les coordonnées obligatoires sont incomplètes", () => expect(isLegalReadyForLivePayments()).toBe(false));
+  it("autorise le live avec les coordonnées obligatoires renseignées", () => expect(isLegalReadyForLivePayments()).toBe(true));
+  it("signale le médiateur manquant sans en inventer un", () => expect(isConsumerMediatorConfigured()).toBe(false));
   it("conserve le consentement explicite à l’exécution", () => expect(executionConsentText).toContain("accès immédiat"));
 });

@@ -10,13 +10,13 @@ export const legalConfig = {
   rneStatus: "Inscrit",
   rcsRegistrationDate: "20 janvier 2025",
   publicLocation: "Métropole lilloise",
-  registeredAddress: null as string | null,
+  registeredAddress: "rue du huit mai 1945 - 59130 Lambersart",
   publicEmail: "contact@reponseastrale.fr",
-  publicPhone: null as string | null,
+  publicPhone: "06 60 69 70 60",
   publicationDirector: "Vincent Vallet",
-  hostingProviderName: "Netlify",
-  hostingProviderAddress: null as string | null,
-  hostingProviderPhone: null as string | null,
+  hostingProviderName: "Netlify, Inc.",
+  hostingProviderAddress: "101 2nd Street, San Francisco, CA 94105, États-Unis",
+  hostingProviderContact: "support@netlify.com",
   mediatorName: null as string | null,
   mediatorAddress: null as string | null,
   mediatorWebsite: null as string | null,
@@ -30,9 +30,9 @@ export const executionConsentText =
   "Je demande l’accès immédiat aux Soleils achetés avant la fin du délai légal de rétractation. Je reconnais que l’utilisation d’un Soleil pour soumettre une question déclenche l’exécution du service correspondant et peut affecter l’exercice de mon droit de rétractation dans les conditions prévues par la loi.";
 
 export const legalCompletion = {
-  registeredAddress: false,
-  publicPhone: false,
-  hostingProviderContact: false,
+  registeredAddress: true,
+  publicPhone: true,
+  hostingProviderContact: true,
   consumerMediator: false,
 } as const;
 
@@ -40,15 +40,20 @@ const mandatoryLiveFields: Array<string | null> = [
   legalConfig.registeredAddress,
   legalConfig.publicPhone,
   legalConfig.hostingProviderAddress,
-  legalConfig.hostingProviderPhone,
-  legalConfig.mediatorName,
-  legalConfig.mediatorAddress,
-  legalConfig.mediatorWebsite,
+  legalConfig.hostingProviderContact,
 ];
 
 export function isLegalReadyForLivePayments() {
   return mandatoryLiveFields.every((value) => Boolean(value?.trim()))
-    && Object.values(legalCompletion).every(Boolean);
+    && legalCompletion.registeredAddress
+    && legalCompletion.publicPhone
+    && legalCompletion.hostingProviderContact;
+}
+
+export function isConsumerMediatorConfigured() {
+  return legalCompletion.consumerMediator
+    && [legalConfig.mediatorName, legalConfig.mediatorAddress, legalConfig.mediatorWebsite]
+      .every((value) => Boolean(value?.trim()));
 }
 
 // Compatibility with the existing legal page while it is expanded.

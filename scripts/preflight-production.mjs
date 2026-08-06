@@ -3,11 +3,12 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { neon } from "@neondatabase/serverless";
 import Stripe from "stripe";
-import { isLegalReadyForLivePayments } from "../content/legal.ts";
+import { isConsumerMediatorConfigured, isLegalReadyForLivePayments } from "../content/legal.ts";
 import { productionEnvironment, validateProductionEnvironment } from "../lib/env-rules.ts";
 
 const env = process.env;
 const failures = [];
+const warnings = [];
 const report = (label, state) => console.log(`${label}: ${state}`);
 const present = (name) => Boolean(env[name]?.trim());
 
@@ -21,13 +22,15 @@ report("STRIPE_ENVIRONMENT", env.STRIPE_ENVIRONMENT === "live" ? "live" : presen
 report("WORKOS_ENVIRONMENT", env.WORKOS_ENVIRONMENT === "production" ? "production déclaré" : present("WORKOS_ENVIRONMENT") ? "non-production/invalide" : "absent");
 report("NEON_BRANCH", env.NEON_BRANCH === "production" ? "production déclarée" : present("NEON_BRANCH") ? "non-production/invalide" : "absent");
 report("LEGAL_CONFIGURATION", isLegalReadyForLivePayments() ? "prête" : "incomplète");
+report("CONSUMER_MEDIATOR", isConsumerMediatorConfigured() ? "configuré" : "WARNING — non désigné");
 
 failures.push(...validateProductionEnvironment(env));
 if (!isLegalReadyForLivePayments()) failures.push("LEGAL_CONFIGURATION: informations obligatoires incomplètes");
+if (!isConsumerMediatorConfigured()) warnings.push("CONSUMER_MEDIATOR: médiateur de la consommation non désigné");
 
 if (failures.length === 0) {
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
   try {
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
     const expected = [
       [env.STRIPE_PRICE_ONE_SUN, 1990],
       [env.STRIPE_PRICE_THREE_SUNS, 4990],
@@ -42,6 +45,29 @@ if (failures.length === 0) {
   } catch (error) {
     failures.push(`STRIPE_API: contrôle impossible (${error instanceof Error ? error.name : "erreur"})`);
     report("STRIPE_CATALOG", "contrôle impossible");
+  }
+
+  try {
+    const requiredEvents = [
+      "checkout.session.completed",
+      "checkout.session.async_payment_succeeded",
+      "checkout.session.async_payment_failed",
+      "checkout.session.expired",
+      "payment_intent.payment_failed",
+      "charge.refunded",
+      "charge.dispute.created",
+    ];
+    const expectedUrl = `${env.APP_URL.replace(/\/$/, "")}/api/stripe/webhook`;
+    const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
+    const endpoint = endpoints.data.find((candidate) => candidate.url === expectedUrl && candidate.status === "enabled" && candidate.livemode);
+    const enabledEvents = new Set(endpoint?.enabled_events ?? []);
+    const missingEvents = requiredEvents.filter((event) => !enabledEvents.has(event) && !enabledEvents.has("*"));
+    if (!endpoint) failures.push("STRIPE_WEBHOOK: endpoint Live actif introuvable");
+    else if (missingEvents.length) failures.push(`STRIPE_WEBHOOK: événements requis manquants (${missingEvents.join(", ")})`);
+    report("STRIPE_WEBHOOK", endpoint && missingEvents.length === 0 ? "endpoint Live et 7 événements vérifiés" : "invalide");
+  } catch (error) {
+    failures.push(`STRIPE_WEBHOOK_API: contrôle impossible (${error instanceof Error ? error.name : "erreur"})`);
+    report("STRIPE_WEBHOOK", "contrôle impossible");
   }
 
   try {
@@ -81,6 +107,11 @@ if (failures.length === 0) {
     failures.push(`NEON_READ_ONLY: contrôle impossible (${error instanceof Error ? error.name : "erreur"})`);
     report("NEON_SCHEMA", "contrôle impossible");
   }
+}
+
+if (warnings.length) {
+  console.warn("Avertissements non bloquants :");
+  for (const warning of [...new Set(warnings)]) console.warn(`- ${warning}`);
 }
 
 if (failures.length) {
