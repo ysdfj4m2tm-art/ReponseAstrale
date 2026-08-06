@@ -8,7 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const localEnv = path.join(root, ".env.local");
 if (existsSync(localEnv)) loadEnvFile(localEnv);
 
-if (process.env.NEON_BRANCH !== "codex-sales-funnel") {
+if (process.env.NEON_BRANCH !== "codex-sales-funnel" && process.env.NEON_BRANCH !== "production") {
   throw new Error("Vérification refusée : branche Neon inattendue.");
 }
 if (!process.env.DATABASE_URL_UNPOOLED) {
@@ -47,7 +47,12 @@ const functions = await sql`
       "consume_sun_for_question",
       "expire_sun_entitlements",
       "grant_suns_for_paid_order",
+      "record_checkout_expiration",
+      "record_order_dispute",
+      "record_order_payment_failure",
+      "record_order_refund",
       "restore_sun_for_question",
+      "submit_paid_question",
     ]})
   ORDER BY proname
 `;
@@ -55,8 +60,16 @@ const functions = await sql`
 if (tables.length !== expectedTables.length) {
   throw new Error(`Schéma incomplet : ${tables.length}/${expectedTables.length} tables métier.`);
 }
-if (functions.length !== 5) {
-  throw new Error(`Fonctions transactionnelles incomplètes : ${functions.length}/5.`);
+if (functions.length !== 10) {
+  throw new Error(`Fonctions transactionnelles incomplètes : ${functions.length}/10.`);
+}
+
+if (process.env.NEON_BRANCH === "production") {
+  const testRows = await sql`
+    SELECT count(*)::int AS count FROM profiles
+    WHERE auth_user_id LIKE 'test-%' OR email_normalized LIKE '%@example.invalid'
+  `;
+  if (testRows[0].count !== 0) throw new Error("Données de test détectées sur la branche Production.");
 }
 
 console.log(`Branche vérifiée : ${process.env.NEON_BRANCH}`);

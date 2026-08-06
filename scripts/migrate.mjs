@@ -10,8 +10,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const localEnv = path.join(root, ".env.local");
 if (existsSync(localEnv)) loadEnvFile(localEnv);
 
-if (process.env.NEON_BRANCH !== "codex-sales-funnel") {
-  throw new Error("Migration refusée : la branche Neon active n'est pas codex-sales-funnel.");
+const targetBranch = process.env.NEON_BRANCH;
+if (targetBranch !== "codex-sales-funnel" && targetBranch !== "production") {
+  throw new Error("Migration refusée : NEON_BRANCH doit identifier explicitement codex-sales-funnel ou production.");
+}
+if (targetBranch === "production" && process.env.CONFIRM_PRODUCTION_MIGRATION !== "APPLY_VERSIONED_MIGRATIONS") {
+  throw new Error("Migration Production refusée : autorisation explicite absente.");
 }
 
 const connectionString = process.env.DATABASE_URL_UNPOOLED;
@@ -60,7 +64,7 @@ try {
   }
 
   await client.query("COMMIT");
-  console.log("Migrations terminées sur codex-sales-funnel.");
+  console.log(`Migrations versionnées terminées sur ${targetBranch}.`);
 } catch (error) {
   await client.query("ROLLBACK");
   throw error;

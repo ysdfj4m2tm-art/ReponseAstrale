@@ -17,10 +17,9 @@ Le formulaire est relié à Netlify Forms par une soumission AJAX encodée en `a
 - Tailwind CSS 4 et PostCSS ;
 - React Hook Form, Zod et `@hookform/resolvers` ;
 - Motion et Lucide React ;
-- Neon PostgreSQL 18 et Neon Auth ;
+- Neon PostgreSQL 18 et WorkOS AuthKit ;
 - Drizzle ORM et migrations SQL contrôlées ;
 - Stripe Checkout et webhook signé ;
-- Resend prévu pour les e-mails transactionnels applicatifs ;
 - Google Gemini API prévu pour l’interprétation et la rédaction, séparément du moteur astrologique déterministe ;
 - ESLint, Vitest, Testing Library et jsdom pour les contrôles.
 
@@ -126,17 +125,20 @@ Copier `.env.example` vers `.env.local` en local et déclarer les mêmes variabl
 | `GEOCODING_API_KEY` | clé privée éventuelle d’un futur géocodage |
 | `DATABASE_URL` | connexion Neon pooled de l’application |
 | `DATABASE_URL_UNPOOLED` | connexion directe réservée aux migrations |
-| `NEON_AUTH_BASE_URL` | endpoint Neon Auth |
-| `NEON_AUTH_COOKIE_SECRET` | chiffrement des cookies Auth |
+| `NEON_BRANCH` | garde-fou explicite : `codex-sales-funnel` en preview, `production` en production |
+| `WORKOS_CLIENT_ID` | identifiant public de l’application WorkOS Staging |
+| `WORKOS_API_KEY` | clé WorkOS strictement serveur |
+| `WORKOS_COOKIE_PASSWORD` | chiffrement serveur de la session AuthKit, 32 caractères minimum |
+| `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | callback exact enregistré dans WorkOS (`/callback`) |
+| `WORKOS_COOKIE_SAMESITE` | politique du cookie SDK, valeur recommandée `lax` pour le retour OAuth |
+| `WORKOS_ENVIRONMENT` | garde-fou explicite : `staging` en preview, `production` en production |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | API et signature Stripe côté serveur |
 | `STRIPE_PRICE_ONE_SUN` / `STRIPE_PRICE_THREE_SUNS` | catalogue Stripe test/live |
 | `STUDIO_API_TOKEN` | authentification serveur de la passerelle Studio |
-| `EMAIL_PROVIDER` / `EMAIL_FROM` | fournisseur Resend et expéditeur transactionnel |
-| `RESEND_API_KEY` | clé Resend serveur pour les e-mails de l’application |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | accès serveur au service Gemini retenu |
 | `SENSITIVE_CONTENT_GUARD` | contrôle prudent avant stockage/envoi, valeur recommandée `block` |
 
-Ne jamais placer de secret dans une variable préfixée `NEXT_PUBLIC_`. L’envoi Resend n’est pas considéré opérationnel avant vérification du domaine, autorisation de l’expéditeur, configuration de la clé et réception d’un e-mail réel. Les codes Neon Auth utilisent la configuration e-mail propre à Neon Auth ; en production, prévoir séparément le SMTP Resend dans Neon et l’API Resend dans l’application.
+Ne jamais placer de secret dans une variable préfixée `NEXT_PUBLIC_`. `NEXT_PUBLIC_WORKOS_REDIRECT_URI` est une URL publique, pas une clé. AuthKit hébergé génère, envoie et vérifie lui-même les codes Magic Auth. Les reçus de paiement sont gérés par Stripe ; aucune intégration d’e-mail transactionnel applicatif n’est active.
 
 ## Suspension du formulaire
 
@@ -182,4 +184,4 @@ Netlify Web Analytics peut être activé depuis **Analytics** dans le tableau de
 
 ## Parcours commercial
 
-Le code fournit le catalogue 1/3 Soleils, Stripe Checkout, un webhook idempotent, les droits transactionnels, Neon Auth par code e-mail, l’espace client et la passerelle Studio. Le PDF reste produit par le Studio. Les ressources Stripe, l’expéditeur e-mail et les variables Netlify doivent être configurés selon `docs/` avant un test bout en bout, puis la checklist juridique doit être soldée avant le live.
+Le code fournit le catalogue 1/3 Soleils, Stripe Checkout, un webhook idempotent, les droits transactionnels, WorkOS Magic Auth par code e-mail, l’espace client et la passerelle Studio. Le PDF reste produit par le Studio. Les ressources Stripe test, WorkOS Staging et les variables Netlify doivent être configurées selon `docs/` avant un test bout en bout, puis la checklist juridique doit être soldée avant le live.

@@ -1,38 +1,33 @@
-# Netlify — procédure de déploiement (non exécutée)
+# Netlify — Deploy Preview WorkOS / Neon / Stripe test
 
-Le site public Next.js 16 utilise `netlify.toml`, Node 22 et les Route Handlers. Neon se trouve à Frankfurt ; choisir une région de fonctions européenne compatible dans le plan Netlify lorsque disponible et mesurer la latence.
+Le site Next.js 16 utilise `netlify.toml`, Node 22, les Route Handlers et `proxy.ts`. La seule base autorisée pour ce chantier est la branche Neon `codex-sales-funnel`.
 
-## Variables
+## Variables Deploy Preview
 
-Reporter les variables de `.env.example` dans le contexte **Deploy Preview** sans les exposer au navigateur. Utiliser uniquement la branche Neon `codex-sales-funnel`, des données de test et les ressources Stripe test (`STRIPE_ENVIRONMENT=test`, `STRIPE_AUTOMATIC_TAX=false`). Le secret Studio doit être long, aléatoire et réservé aux fonctions serveur. Les valeurs de production doivent être distinctes.
+Configurer côté serveur `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED` et les variables Stripe test. Définir aussi `NEON_BRANCH=codex-sales-funnel` et `WORKOS_ENVIRONMENT=staging`. La convention officielle du SDK `@workos-inc/authkit-nextjs@4.3.1` reste `NEXT_PUBLIC_WORKOS_REDIRECT_URI`; elle doit correspondre exactement à l’URL de callback de la preview. Cette variable publique ne contient aucun secret.
 
-La preview de rendu n’a besoin d’aucune clé Gemini ou Resend. Lorsque des tests d’intégration seront autorisés séparément, `RESEND_API_KEY`, `GEMINI_API_KEY` et `GEMINI_MODEL` resteront des variables serveur limitées au contexte Deploy Preview. Aucun de ces noms ne doit recevoir un préfixe `NEXT_PUBLIC_`.
+Conserver `STRIPE_ENVIRONMENT=test` et `STRIPE_AUTOMATIC_TAX=false`. `APP_URL` doit être l’origine exacte de la preview. Ne jamais utiliser de clé Stripe live. `WORKOS_COOKIE_SAMESITE=lax` convient au retour AuthKit intersite ; le SDK impose HttpOnly et choisit Secure en HTTPS. Ne définir ni domaine de cookie partagé ni `SameSite=none` pour ce parcours.
 
-## Preview
+Dans WorkOS Staging, vérifier :
 
-1. Ne pas promouvoir les migrations Neon vers production.
-2. Configurer Auth, Stripe test, e-mail et Studio sur une preview.
-3. Lancer lint, TypeScript, tests, build, paiement test, webhook répété, connexion e-mail et parcours mobile/desktop.
-4. Inspecter les logs sans corps de requête, e-mail, jeton ou secret.
-5. Vérifier la balise robots, l’en-tête `X-Robots-Tag: noindex, nofollow, noarchive` et le badge « Environnement de prévisualisation ».
+- redirect URI : `https://deploy-preview-1--reponseastrale.netlify.app/callback` ;
+- Sign-in URL : `https://deploy-preview-1--reponseastrale.netlify.app/connexion` ;
+- Logout URI par défaut : une URL interne autorisée de la même preview, par exemple sa page d’accueil ;
+- Magic Auth activé ;
+- application `reponseastrale.fr's Application`.
 
-Un Deploy Preview est partageable avec toute personne possédant son URL sauf protection Netlify complémentaire. Le `noindex` réduit l’indexation ; il ne rend pas l’URL privée.
+## Contrôles de preview
 
-## Vérification Gemini avant production
+1. Ne promouvoir aucune migration vers Neon production.
+2. Lancer lint, TypeScript, tests, tests DB, vérification DB, build, audit et `git diff --check`.
+3. Ouvrir `/connexion`, effectuer réellement le code Magic Auth, puis contrôler `/callback`, `/espace` et le bouton `Déconnexion`.
+4. Confirmer qu’une seconde visite à `/espace` après déconnexion ou expiration repart vers `/connexion`.
+5. Faire un paiement Stripe test, rejouer le webhook et vérifier le rattachement uniquement avec le même e-mail WorkOS vérifié.
+6. Inspecter les logs sans corps de requête, e-mail, code, jeton ni secret.
+7. Vérifier `Cache-Control: no-store` sur `/espace/*`, le `noindex` de preview et l’absence de données d’un autre compte.
 
-- confirmer le projet Google et la facturation ;
-- identifier précisément l’API Gemini et le modèle employés ;
-- valider la région et les conditions contractuelles ;
-- désactiver toute journalisation ou tout partage facultatif destiné à l’amélioration des modèles ;
-- vérifier les paramètres de sécurité et le contrôle configurable des contenus sensibles ;
-- stocker la clé exclusivement dans Netlify et confirmer son absence du navigateur.
-
-Le contrôle automatique est une aide prudente, pas une garantie infaillible. Une détection vraisemblable doit provoquer une demande de reformulation avant stockage. Toute revue administrative exceptionnelle passe par l’accès Studio authentifié et limité ; le texte intégral d’une question ne doit jamais être copié dans les logs ni dans les analytics.
-
-La configuration de production doit utiliser un service payant adapté. Les conditions de traitement, journalisation et conservation dépendent du service Gemini choisi et de sa configuration ; aucune conservation absolument nulle ne doit être promise sans vérification contractuelle et technique du service retenu.
+La réception réelle du code e-mail et le paiement de bout en bout ne sont validés qu’après un test navigateur réel. Un build réussi ne suffit pas.
 
 ## Production
 
-La mise en production est bloquée tant que `docs/LEGAL_CHECKLIST.md` n’est pas soldée. Une fois autorisée, utiliser le projet existant, créer une sauvegarde/branche de sécurité Neon, appliquer les migrations après revue, configurer les domaines Auth et webhook live, puis réaliser un contrôle post-déploiement. Aucun déploiement n’a été effectué dans ce chantier.
-
-Le webhook Netlify doit conserver le corps brut et répondre rapidement. Surveiller les événements Stripe échoués, les logs de fonction, les erreurs Auth et les commandes restées `checkout_created`.
+Les variables Production sont configurées exclusivement dans le contexte **Production** de Netlify. Les valeurs Stripe test, WorkOS Staging et Neon `codex-sales-funnel` restent exclusivement dans **Deploy Previews**. La checklist juridique et `npm run preflight:production` doivent être validés avant toute fusion. La procédure complète est dans `docs/PRODUCTION_RUNBOOK.md`.

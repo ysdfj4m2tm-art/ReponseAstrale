@@ -3,37 +3,29 @@
 ## Cible autorisée
 
 - Projet existant : `reponseastrale` (`lingering-shadow-04594799`), PostgreSQL 18, région Frankfurt.
-- Développement : branche `codex-sales-funnel`. Les migrations de ce chantier ont été appliquées uniquement ici.
-- Production : ne pas migrer, fusionner ou modifier sans validation distincte.
+- Développement et Deploy Preview : branche `codex-sales-funnel` uniquement.
+- Production : aucune migration, fusion ou modification sans validation distincte.
 
-Le fichier local `.neon` sélectionne le projet et la branche et reste ignoré par Git. Le script `npm run db:migrate` refuse toute branche dont `NEON_BRANCH` n’est pas exactement `codex-sales-funnel`.
+Le script `npm run db:migrate` accepte `codex-sales-funnel`. Il n’accepte `production` qu’avec `CONFIRM_PRODUCTION_MIGRATION=APPLY_VERSIONED_MIGRATIONS`, à définir uniquement après autorisation humaine explicite. Les tests d’intégration avec écritures restent interdits en Production.
 
-## Connexions et variables
+## Connexions
 
-- `DATABASE_URL` : connexion pooled pour l’application serverless.
-- `DATABASE_URL_UNPOOLED` : connexion directe, réservée aux migrations et diagnostics.
-- `NEON_AUTH_BASE_URL` : URL du service Neon Auth.
-- `NEON_AUTH_COOKIE_SECRET` : secret aléatoire d’au moins 32 caractères, distinct par environnement.
+- `DATABASE_URL` : connexion pooled pour l’application Netlify serverless.
+- `DATABASE_URL_UNPOOLED` : connexion directe réservée aux migrations, tests d’intégration et diagnostics.
 
-Ne jamais afficher une URL de connexion complète ni stocker ces valeurs dans Git. `.env.local` est ignoré. Sur Netlify, saisir les variables dans l’interface et limiter leur portée au contexte requis.
+Les profils conservent l’identité WorkOS dans `profiles.auth_user_id`. L’e-mail est normalisé côté serveur et les commandes payées non rattachées sont réclamées uniquement après réception d’un utilisateur WorkOS dont `emailVerified` vaut strictement `true`. Toutes les lectures de l’espace filtrent ensuite par l’UUID du profil ; un utilisateur ne peut donc pas lire les achats, questions ou réponses d’un autre.
 
-## Migrations et sauvegardes
+Le type et les contraintes existants de `profiles.auth_user_id` conviennent. La migration WorkOS ne nécessite aucune modification de table : ne pas créer de colonne parallèle et ne pas supprimer les données ou fonctions transactionnelles existantes.
 
-1. Vérifier `pwd`, le projet et `NEON_BRANCH`.
-2. Exécuter `npm run db:migrate`, puis `npm run db:verify`.
-3. Exécuter `npm run test:db` ; le test utilise une transaction annulée.
-4. Avant toute promotion future, créer une branche de sauvegarde Neon de production, inspecter le SQL et tester une restauration.
+## Migrations et vérification
 
-Les migrations ne suppriment aucune table. La promotion de production n’est ni automatisée ni exécutée par ce dépôt.
+1. Vérifier la branche Neon et la valeur explicite de `NEON_BRANCH`.
+2. N’exécuter `npm run db:migrate` que si une nouvelle migration SQL est réellement présente.
+3. Exécuter `npm run db:verify` puis `npm run test:db` ; ce dernier travaille dans une transaction annulée.
+4. Avant toute promotion future, créer une branche de sauvegarde de production, inspecter le SQL et tester la restauration.
 
-## Neon Auth
+## Authentification
 
-Neon Auth est activé sur le projet. Le site monte `/api/auth/[...path]`, les écrans `/connexion/*` et protège `/espace/*` côté serveur. Le mode retenu est le code e-mail à usage unique. Configurer les domaines autorisés pour le domaine de preview puis `https://reponseastrale.fr`; retirer localhost de la configuration live si inutile. Vérifier la délivrabilité, l’expéditeur, les redirections et l’état `emailVerified` avant production.
+Neon Auth n’est plus utilisé par l’application. WorkOS AuthKit Staging gère l’identité, Magic Auth et les sessions ; Neon reste exclusivement le stockage métier. Les anciennes variables `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET` et `NEON_AUTH_SECURITY_REVIEW` doivent être retirées de Netlify lorsqu’elles ne servent à aucun autre service.
 
-Neon Auth assure lui-même la génération et la remise des codes. Pour la production, configurer dans la console Neon Auth, sur la branche concernée, un fournisseur SMTP personnalisé utilisant les identifiants SMTP Resend. Cette configuration est distincte de `RESEND_API_KEY`, utilisée côté serveur par l’application pour ses confirmations, notifications, réponses disponibles, accusés de réception et demandes relatives aux données. Si les deux usages sont activés, Resend doit donc être configuré à la fois dans Neon Auth (SMTP) et dans Netlify (API applicative), avec des secrets adaptés et jamais committés.
-
-Ne pas considérer l’e-mail comme opérationnel avant vérification du domaine chez Resend, autorisation de l’expéditeur, configuration du secret approprié dans chaque service et réception d’un code Neon Auth ainsi que d’un e-mail transactionnel applicatif réels. Le serveur partagé Neon peut servir uniquement aux essais de développement lorsque disponible.
-
-## Rotation
-
-Pour un mot de passe PostgreSQL ou un secret Auth : générer une nouvelle valeur dans Neon, mettre à jour uniquement les variables Netlify concernées, valider sur une preview, puis révoquer l’ancienne valeur. Ne jamais copier la valeur dans un ticket, un commit ou des logs. Répéter séparément par environnement.
+La rotation d’un mot de passe PostgreSQL se fait dans Neon puis dans les seules variables Netlify concernées, sans afficher l’URL complète dans un ticket, commit ou log.

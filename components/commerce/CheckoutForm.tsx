@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SunTokenIcon } from "@/components/brand/SunTokenIcon";
 import { commerceProducts, formatEuro, type ProductCode } from "@/content/commerce";
 import { executionConsentText } from "@/content/legal";
 import { trackEvent } from "@/lib/analytics";
@@ -42,7 +43,7 @@ export function CheckoutForm({ chartToken }: { chartToken?: string }) {
           <label className={`product-card ${productCode === product.code ? "product-card--selected" : ""}`} key={product.code}>
             <input type="radio" name="product" value={product.code} checked={productCode === product.code} onChange={() => setProductCode(product.code)} />
             {product.badge && <span className="product-badge">{product.badge}</span>}
-            <strong>{product.name}</strong><span>{product.subtitle}</span>
+            <span className="product-card__sun"><SunTokenIcon/><strong>{product.name}</strong></span><span>{product.subtitle}</span>
             <b>{formatEuro(product.priceCents)} TTC</b><small>Valable {product.validityDays} jours · Aucun abonnement</small>
           </label>
         ))}

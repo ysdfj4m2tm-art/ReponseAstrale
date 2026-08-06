@@ -1,5 +1,6 @@
 import { isLegalReadyForLivePayments } from "@/content/legal";
-import { NEON_AUTH_SDK_SECURITY_APPROVED } from "@/lib/auth/security";
+import { assertEnvironment, EnvironmentValidationError, getDeploymentKind } from "@/lib/env-rules";
+export { EnvironmentValidationError } from "@/lib/env-rules";
 
 export class ConfigurationError extends Error {
   constructor(public readonly missing: string[]) {
@@ -24,14 +25,23 @@ export function getStripeEnvironment() {
   if (value === "live" && !isLegalReadyForLivePayments()) {
     throw new Error("Le paiement réel est bloqué tant que la configuration juridique obligatoire est incomplète.");
   }
-  if (value === "live" && !NEON_AUTH_SDK_SECURITY_APPROVED) {
-    throw new Error("Le paiement réel est bloqué tant que le SDK Neon Auth officiel dépend d’une version vulnérable de Better Auth.");
+  if (value === "live" && !hasAuthConfiguration()) {
+    throw new Error("Le paiement réel est bloqué tant que WorkOS AuthKit n’est pas entièrement configuré.");
   }
   const secret = process.env.STRIPE_SECRET_KEY || "";
   if (value === "test" && secret.startsWith("sk_live_")) {
     throw new Error("Une clé Stripe live ne peut pas être utilisée dans l’environnement de test.");
   }
   return value;
+}
+
+export function assertCommerceEnvironment() {
+  const kind = getDeploymentKind();
+  assertEnvironment(kind === "production" ? "production" : kind);
+  if (kind === "production" && !isLegalReadyForLivePayments()) {
+    throw new EnvironmentValidationError(["LEGAL_CONFIGURATION: informations obligatoires incomplètes"]);
+  }
+  return kind;
 }
 
 export function normalizeEmail(email: string) {
@@ -43,5 +53,10 @@ export function hasDatabaseConfiguration() {
 }
 
 export function hasAuthConfiguration() {
-  return Boolean(process.env.NEON_AUTH_BASE_URL && process.env.NEON_AUTH_COOKIE_SECRET);
+  return Boolean(
+    process.env.WORKOS_CLIENT_ID
+    && process.env.WORKOS_API_KEY
+    && process.env.WORKOS_COOKIE_PASSWORD
+    && process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI,
+  );
 }

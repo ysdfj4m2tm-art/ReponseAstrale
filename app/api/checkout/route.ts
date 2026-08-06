@@ -3,9 +3,10 @@ import { legalConfig } from "@/content/legal";
 import { getSqlClient } from "@/db/client";
 import { resolveChartToken } from "@/lib/commerce/chart-access";
 import { validateCheckoutInput, type CheckoutInput } from "@/lib/commerce/validation";
-import { ConfigurationError, getAppUrl, normalizeEmail, requireServerEnv } from "@/lib/env";
+import { ConfigurationError, EnvironmentValidationError, getAppUrl, normalizeEmail } from "@/lib/env";
 import { checkRateLimit, requestRateLimitKey } from "@/lib/rate-limit";
-import { getStripe } from "@/lib/stripe";
+import { assertCommerceEnvironment } from "@/lib/env";
+import { getStripe, getVerifiedStripePrice } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -14,12 +15,13 @@ export async function POST(request: Request) {
   if (!limit.allowed) return NextResponse.json({ error: "Trop de tentatives. Réessayez dans un instant." }, { status: 429 });
 
   try {
+    assertCommerceEnvironment();
     const body = (await request.json()) as CheckoutInput;
     const validation = validateCheckoutInput(body);
     if (!validation.ok) return NextResponse.json({ error: validation.code }, { status: 400 });
 
     const product = validation.product;
-    const priceId = requireServerEnv(product.stripePriceEnv)[product.stripePriceEnv];
+    const priceId = await getVerifiedStripePrice(product);
     const chartId = await resolveChartToken(body.chartToken);
     if (body.chartToken && !chartId) return NextResponse.json({ error: "INVALID_CHART_TOKEN" }, { status: 400 });
     const sql = getSqlClient();
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
       customer_email: normalizeEmail(body.email),
       client_reference_id: String(order.opaque_session_id),
       metadata: { order_id: String(order.order_id), product_code: product.code },
+      payment_intent_data: { metadata: { order_id: String(order.order_id), product_code: product.code } },
       success_url: `${getAppUrl()}/paiement/succes?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/paiement/annule`,
       locale: "fr",
@@ -50,8 +53,8 @@ export async function POST(request: Request) {
     `;
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    if (error instanceof ConfigurationError) {
-      return NextResponse.json({ error: "Paiement indisponible : configuration de test incomplète." }, { status: 503 });
+    if (error instanceof ConfigurationError || error instanceof EnvironmentValidationError) {
+      return NextResponse.json({ error: "Paiement indisponible : configuration serveur incomplète." }, { status: 503 });
     }
     console.error("checkout_failed", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json({ error: "Impossible de préparer le paiement." }, { status: 500 });

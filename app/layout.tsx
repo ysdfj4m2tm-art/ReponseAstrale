@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { NEON_AUTH_SDK_SECURITY_APPROVED } from "@/lib/auth/security";
+import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://reponseastrale.fr";
 const netlifyContext = process.env.CONTEXT;
@@ -25,5 +24,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f2eff9", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fr"><body>{isDeployPreview && <div className="preview-badge" role="status">Environnement de prévisualisation</div>}<AuthProvider enabled={NEON_AUTH_SDK_SECURITY_APPROVED}>{children}</AuthProvider></body></html>;
+  return <html lang="fr"><body>{isDeployPreview && <div className="preview-badge" role="status">Environnement de prévisualisation</div>}<AuthKitProvider>{children}</AuthKitProvider></body></html>;
 }
